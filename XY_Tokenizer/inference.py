@@ -10,7 +10,7 @@ if __name__ == "__main__":
     set_logging()
     
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config_path", type=str, default="./config/xy_tokenizer_config.yaml")
+    parser.add_argument("--config_path", type=str, default="./config/xy_tokenizer_32k_config.yaml")
     parser.add_argument("--checkpoint_path", type=str, default="./weights/xy_tokenizer.ckpt")
     parser.add_argument("--device", type=str, default="cuda")
     

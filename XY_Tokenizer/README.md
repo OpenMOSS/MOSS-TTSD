@@ -9,7 +9,7 @@ XY Tokenizer is a speech codec that simultaneously models both semantic and acou
 - **High-quality audio tokenization**: Convert speech to discrete tokens and back with minimal quality loss
 - **Long audio support**: Process audio files longer than 30 seconds using chunking with overlap
 - **Batch processing**: Efficiently process multiple audio files in batches
-- **24kHz output**: Generate high-quality 24kHz audio output
+- **32kHz output**: Generate high-quality 32kHz audio output
 
 ## Installation
 
@@ -29,7 +29,7 @@ To tokenize audio files and reconstruct them:
 
 ```bash
 python inference.py \
-  --config_path ./config/xy_tokenizer_config.yaml \
+  --config_path ./config/xy_tokenizer_32k_config.yaml \
   --checkpoint_path ./weights/xy_tokenizer.ckpt \
   --input_dir ./input_wavs/ \
   --output_dir ./output_wavs/

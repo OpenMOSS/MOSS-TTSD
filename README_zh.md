@@ -34,10 +34,10 @@ MOSS-TTSD（text to spoken dialogue）是一个开源的中英双语口语对话
 
 ## 最新动态 🚀
 
-- **[2025-08-12]** 我们支持了 MOSS-TTSD v0.5的流式推理。
-- **[2025-07-29]** 我们提供了 MOSS-TTSD v0.5的硅基流动API调用接口和调用示例。
-- **[2025-07-16]** 我们开源了 MOSS-TTSD v0.5的微调代码，支持全量微调，LoRA微调和多机训练。
-- **[2025-07-16]** 我们开源了 MOSS-TTSD v0.5的微调代码，支持全量微调，LoRA微调和多机训练。
+- **[2025-08-25]** 我们发布了 32khz XY-Tokenizer。
+- **[2025-08-12]** 我们支持了 MOSS-TTSD v0.5 的流式推理。
+- **[2025-07-29]** 我们提供了 MOSS-TTSD v0.5 的硅基流动API调用接口和调用示例。
+- **[2025-07-16]** 我们开源了 MOSS-TTSD v0.5 的微调代码，支持全量微调，LoRA微调和多机训练。
 - **[2025-07-04]** 我们发布了 MOSS-TTSD v0.5：显著提升了音色切换准确率、声音克隆能力与稳定性。
 - **[2025-06-20]** 我们发布了 MOSS-TTSD v0。此外，我们还提供了播客生成流水线 Podever，可以便捷地将 PDF、URL 或长文本等内容自动转换为高质量播客。
 
@@ -55,11 +55,11 @@ pip install flash-attn
 
 ### 下载 XY-Tokenizer 权重
 
-首先需要下载 XY-Tokenizer 的Codec模型权重，见 [XY_Tokenizer仓库](https://huggingface.co/fnlp/XY_Tokenizer_TTSD_V0)。
+首先需要下载 XY-Tokenizer 的Codec模型权重，见 [XY_Tokenizer仓库](https://huggingface.co/fnlp/XY_Tokenizer_TTSD_V0_32k)。
 
 ```bash
 mkdir -p XY_Tokenizer/weights
-huggingface-cli download fnlp/XY_Tokenizer_TTSD_V0 xy_tokenizer.ckpt --local-dir ./XY_Tokenizer/weights/
+huggingface-cli download fnlp/XY_Tokenizer_TTSD_V0_32k xy_tokenizer.ckpt --local-dir ./XY_Tokenizer/weights/
 ```
 
 ## 使用方法

@@ -1,11 +1,11 @@
 input_sample_rate: &input_sample_rate 16000
-output_sample_rate: &output_sample_rate 24000
+output_sample_rate: &output_sample_rate 32000
 
 generator_params:
     input_sample_rate: *input_sample_rate
     output_sample_rate: *output_sample_rate
     encoder_downsample_rate: 1280
-    decoder_upsample_rate: 1920
+    decoder_upsample_rate: 2560
 
     feature_extractor_kwargs:
         chunk_length: 30
@@ -114,11 +114,11 @@ generator_params:
         decoder_ffn_dim: 3072
         activation_function: "gelu"
     
-    vocos_kwargs:  # 100hz -> 24khz
+    vocos_kwargs:  # 100hz -> 32khz
         input_channels: 80
         dim: 512
         intermediate_dim: 4096
         num_layers: 30
-        n_fft: 960
-        hop_size: 240
+        n_fft: 1280
+        hop_size: 320
         padding: "same"

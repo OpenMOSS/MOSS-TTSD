@@ -12,7 +12,7 @@ import argparse
 # =============== Configuration Section ===============
 SYSTEM_PROMPT = "You are a speech synthesizer that generates natural, realistic, and human-like conversational audio from dialogue text."
 MODEL_PATH = "fnlp/MOSS-TTSD-v0.5"
-SPT_CONFIG_PATH = "XY_Tokenizer/config/xy_tokenizer_config.yaml"
+SPT_CONFIG_PATH = "XY_Tokenizer/config/xy_tokenizer_32k_config.yaml"
 SPT_CHECKPOINT_PATH = "XY_Tokenizer/weights/xy_tokenizer.ckpt"
 MAX_CHANNELS = 8
 
