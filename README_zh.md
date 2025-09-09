@@ -34,6 +34,7 @@ MOSS-TTSD（text to spoken dialogue）是一个开源的中英双语口语对话
 
 ## 最新动态 🚀
 
+- **[2025-09-09]** 我们支持了 SGLang 推理引擎加速模型推理，最高可加速**16倍**。
 - **[2025-08-25]** 我们发布了 32khz XY-Tokenizer。
 - **[2025-08-12]** 我们支持了 MOSS-TTSD v0.5 的流式推理。
 - **[2025-07-29]** 我们提供了 MOSS-TTSD v0.5 的硅基流动API调用接口和调用示例。
@@ -493,6 +494,87 @@ python finetune/finetune_workflow.py --config path/to/your/config.yaml
 #### 参数说明
 
 - `-c`, `--config`: 工作流配置 YAML 文件的路径（默认：`./finetune/finetune_config.yaml`）
+
+## 使用 SGLang 加速推理
+
+### 环境安装
+
+首先从我们的仓库下载兼容 MOSS-TTSD 的 SGLang 和 transformers 库。
+
+```bash
+git clone https://github.com/OpenMOSS/sglang
+git clone -b moss-ttsd https://github.com/gaoyang07/transformers
+```
+
+#### 使用 venv 管理环境
+
+```bash
+python -m venv moss_ttsd_sglang
+source moss_ttsd_sglang/bin/activate
+pip install ./sglang/python[all]
+pip install ./transformers
+```
+
+#### 使用 conda 管理环境
+
+```bash
+conda create -n moss_ttsd_sglang python=3.10
+conda activate moss_ttsd_sglang
+pip install ./sglang/python[all]
+pip install ./transformers
+```
+
+### 端到端推理服务
+
+#### 启动推理服务器
+
+在启动服务前，下载 [MOSS-TTSD](https://huggingface.co/fnlp/MOSS-TTSD-v0.5) 和 [HuggingFace 版本的 XY_Tokenizer](https://huggingface.co/fnlp/XY_Tokenizer_TTSD_V0_32k_hf)。
+
+```bash
+git clone https://huggingface.co/fnlp/MOSS-TTSD-v0.5
+git clone https://huggingface.co/fnlp/XY_Tokenizer_TTSD_V0_32k_hf
+```
+或者
+```bash
+hf download fnlp/MOSS-TTSD-v0.5 --local-dir ./MOSS-TTSD-v0.5
+hf download fnlp/XY_Tokenizer_TTSD_V0_32k_hf --local-dir ./XY_Tokenizer_TTSD_V0_32k_hf
+```
+
+然后运行以下命令启动推理服务器：
+
+```bash
+python -m sglang.launch_server \
+    --model-path <path-to-MOSS-TTSD-v0.5> \
+    --port 30000 --host 0.0.0.0 \
+    --log-level info \
+    --delay-pattern \
+    --xy-tokenizer-path <path-to-XY_Tokenizer_TTSD_V0_32k_hf>
+```
+
+首次启动可能因编译耗时较长。看到 `The server is fired up and ready to roll!` 即表示服务器已就绪。
+
+#### 运行推理
+
+我们提供了一个示例脚本，用于向服务器发送生成请求；你可以使用它进行推理。
+
+```bash
+python inference_sglang_server.py --host localhost --port 30000 --jsonl examples/examples.jsonl --output_dir outputs --use_normalize
+```
+或者
+```bash
+python inference_sglang_server.py --url http://localhost:30000 --jsonl examples/examples.jsonl --output_dir outputs --use_normalize
+```
+
+参数说明：
+
+- `--url`：服务器基础 URL（例如 `http://localhost:30000`）。设置该项后将忽略 `--host` 和 `--port`。
+- `--host`：服务器主机名。
+- `--port`：服务器端口。
+- `--jsonl`：输入 JSONL 文件路径，包含对话脚本和参考音频。
+- `--output_dir`：生成音频的保存目录。脚本会将文件保存为 `output_<idx>.wav`。
+- `--use_normalize`：是否启用文本归一化（**建议开启**）。
+- `--max_new_tokens`：模型将生成的 token 数量上限。
+- `--silence_duration`：参考音频与生成音频之间的静默时长（默认 0 秒），当生成音频开头出现杂音时（通常因为生成音频续写了prompt的尾音），请尝试将该参数设置为0.1。
 
 ## 演示
 

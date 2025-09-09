@@ -36,6 +36,7 @@ MOSS-TTSD supports voice cloning and long single-session speech generation, maki
 
 ## News 🚀
 
+- **[2025-09-09]** We supported SGLang inference engine to accelerate model inference by up to **16x**.
 - **[2025-08-25]** We released the 32khz version of XY-Tokenizer.
 - **[2025-08-12]** We add support for streaming inference in MOSS-TTSD v0.5.
 - **[2025-07-29]** We provide the SiliconFlow API interface and usage examples for MOSS-TTSD v0.5.
@@ -104,7 +105,7 @@ The input JSONL file should contain one JSON object per line. MOSS-TTSD supports
   "text": "[S1]Speaker 1 dialogue content[S2]Speaker 2 dialogue content[S1]...",
   "prompt_audio_speaker1": "path/to/speaker1_audio.wav",
   "prompt_text_speaker1": "Reference text for speaker 1 voice cloning",
-  "prompt_audio_speaker2": "path/to/speaker2_audio.wav", 
+  "prompt_audio_speaker2": "path/to/speaker2_audio.wav",
   "prompt_text_speaker2": "Reference text for speaker 2 voice cloning"
 }
 ```
@@ -221,7 +222,7 @@ Before using the batch processing tool, you need to set up environment variables
 
 ```bash
 export SILICONFLOW_API_KEY="your_siliconflow_api_key"
-export SILICONFLOW_API_BASE="https://api.siliconflow.cn/v1"  
+export SILICONFLOW_API_BASE="https://api.siliconflow.cn/v1"
 ```
 
 ##### Usage
@@ -255,7 +256,7 @@ The tool supports the same JSONL formats as local inference:
 **Format 2: Shared audio reference**
 ```json
 {
-  "base_path": "/path/to/audio/files", 
+  "base_path": "/path/to/audio/files",
   "text": "[S1]Hello there![S2]Hi, how are you?[S1]I'm doing great!",
   "prompt_audio": "shared_reference.wav",
   "prompt_text": "[S1]Reference for speaker 1[S2]Reference for speaker 2"
@@ -283,7 +284,7 @@ export OPENAI_API_BASE="your_openai_api_base"
 # Process web article
 python podcast_generate.py "https://www.open-moss.com/cn/moss-ttsd/"
 
-# Process PDF file  
+# Process PDF file
 python podcast_generate.py "examples/Attention Is All You Need.pdf"
 
 # Process text file
@@ -371,7 +372,7 @@ The data preprocessing script supports two JSONL formats:
 {
   "reference_audio": "/path/to/reference.wav",
   "reference_text": "[S1]Reference content for voice cloning[S2]Reference content for voice cloning",
-  "audio": "/path/to/main.wav", 
+  "audio": "/path/to/main.wav",
   "text": "[S1]Speaker content[S2]Speaker content..."
 }
 ```
@@ -421,7 +422,7 @@ torchrun --nproc_per_node=8 --master_port=29500 finetune/finetune.py \
 
 #### LoRA Configuration
 
-When using `--lora`, you can customize the LoRA parameters by editing the configuration file `lora_config.yaml`. 
+When using `--lora`, you can customize the LoRA parameters by editing the configuration file `lora_config.yaml`.
 
 **LoRA Parameters:**
 - **r (rank)**: Controls the bottleneck size. Lower values use less memory but may limit adaptation capability
@@ -458,7 +459,7 @@ The workflow uses a YAML configuration file to specify all parameters. You can f
 ```yaml
 path_to_jsonl :           # Path to the training data in JSONL format
 data_output_directory :   # Directory where the processed data will be saved
-data_name :               # Name of the dataset   
+data_name :               # Name of the dataset
 use_normalize :           # Whether to normalize the data (true/false)
 path_to_model :           # Path to the pre-trained model (leave empty to use default HuggingFace model)
 finetuned_model_output :  # Directory where the finetuned model will be saved
@@ -491,6 +492,87 @@ python finetune/finetune_workflow.py --config path/to/your/config.yaml
 
 - `-c`, `--config`: Path to the workflow configuration YAML file (default: `./finetune/finetune_config.yaml`)
 
+## Accelerate Inference with SGLang
+
+### Environment Setup
+
+First download the MOSS-TTSD‑compatible SGLang and transformers libraries from our repository.
+
+```bash
+git clone https://github.com/OpenMOSS/sglang
+git clone -b moss-ttsd https://github.com/gaoyang07/transformers
+```
+
+#### Using venv
+
+```bash
+python -m venv moss_ttsd_sglang
+source moss_ttsd_sglang/bin/activate
+pip install ./sglang/python[all]
+pip install ./transformers
+```
+
+#### Using conda
+
+```bash
+conda create -n moss_ttsd_sglang python=3.10
+conda activate moss_ttsd_sglang
+pip install ./sglang/python[all]
+pip install ./transformers
+```
+
+### End-to-End Inference Service
+
+#### Start inference server
+
+Before starting the service, download [MOSS-TTSD](https://huggingface.co/fnlp/MOSS-TTSD-v0.5) and [HuggingFace version of XY_Tokenizer](https://huggingface.co/fnlp/XY_Tokenizer_TTSD_V0_32k_hf).
+
+```bash
+git clone https://huggingface.co/fnlp/MOSS-TTSD-v0.5
+git clone https://huggingface.co/fnlp/XY_Tokenizer_TTSD_V0_32k_hf
+```
+or
+```bash
+hf download fnlp/MOSS-TTSD-v0.5 --local-dir ./MOSS-TTSD-v0.5
+hf download fnlp/XY_Tokenizer_TTSD_V0_32k_hf --local-dir ./XY_Tokenizer_TTSD_V0_32k_hf
+```
+
+Next launch the inference server using the command below:
+
+```bash
+python -m sglang.launch_server \
+    --model-path <path-to-MOSS-TTSD-v0.5> \
+    --port 30000 --host 0.0.0.0 \
+    --log-level info \
+    --delay-pattern \
+    --xy-tokenizer-path <path-to-XY_Tokenizer_TTSD_V0_32k_hf>
+```
+
+The first startup takes longer due to compilation. Once you see `The server is fired up and ready to roll!` the server is ready.
+
+#### Run Inference
+
+We provide an example script that sends generation requests to the server; you can use it to run inference.
+
+```bash
+python inference_sglang_server.py --host localhost --port 30000 --jsonl examples/examples.jsonl --output_dir outputs --use_normalize
+```
+or
+```bash
+python inference_sglang_server.py --url http://localhost:30000 --jsonl examples/examples.jsonl --output_dir outputs --use_normalize
+```
+
+Parameters:
+
+- `--url`: Base server URL (e.g., `http://localhost:30000`). When set, `--host` and `--port` are ignored.
+- `--host`: Server host.
+- `--port`: Server port.
+- `--jsonl`: Path to the input JSONL file containing dialogue scripts and speaker prompts.
+- `--output_dir`: Directory where the generated audio files will be saved. The script saves files as `output_<idx>.wav`.
+- `--use_normalize`: Whether to normalize the text input (**recommended to enable**).
+- `--max_new_tokens`: The maximum number of tokens the model will generate.
+- `--silence_duration`: Silence duration between the reference audio and the generated audio (default: 0 seconds). If noise appears at the beginning of the generated audio (often because it continues the tail end of the prompt), try setting this parameter to 0.1.
+
 ## Demos
 
 See our blog for more demos at https://www.open-moss.com/en/moss-ttsd/
@@ -508,7 +590,7 @@ MOSS-TTSD is released under the Apache 2.0 license.
 
 ```
 @article{moss2025ttsd,
-  title={Text to Spoken Dialogue Generation}, 
+  title={Text to Spoken Dialogue Generation},
   author={OpenMOSS Team},
   year={2025}
 }
