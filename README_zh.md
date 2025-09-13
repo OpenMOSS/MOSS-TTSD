@@ -553,6 +553,8 @@ python -m sglang.launch_server \
 
 首次启动可能因编译耗时较长。看到 `The server is fired up and ready to roll!` 即表示服务器已就绪。
 
+提示：我们的端到端推理服务器包含一个额外的 Codec 模型，该模型会增加约 4GB 的显存（VRAM）占用。如果您使用的 GPU 显存有限，在启动服务器时，请通过 `--mem-fraction-static` 参数设置 SGLang 的显存分配比例，以确保为 Codec 模型预留足够的显存。
+
 #### 运行推理
 
 我们提供了一个示例脚本，用于向服务器发送生成请求；你可以使用它进行推理。
@@ -575,6 +577,8 @@ python inference_sglang_server.py --url http://localhost:30000 --jsonl examples/
 - `--use_normalize`：是否启用文本归一化（**建议开启**）。
 - `--max_new_tokens`：模型将生成的 token 数量上限。
 - `--silence_duration`：参考音频与生成音频之间的静默时长（默认 0 秒），当生成音频开头出现杂音时（通常因为生成音频续写了prompt的尾音），请尝试将该参数设置为0.1。
+
+此外，还可以在 `inference_sglang_server.py` 文件中修改和设置具体的采样参数。
 
 ## 演示
 
