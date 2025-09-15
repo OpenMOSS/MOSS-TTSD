@@ -11,6 +11,13 @@ import torchaudio
 
 from generation_utils import load_audio_data, normalize_text, process_jsonl_item
 
+sampling_params = {
+    "repetition_penalty": 1.0,
+    "temperature": 0.9,
+    "top_p": 0.95,
+    "top_k": 50,
+}
+
 
 def get_file_path(output_path: str) -> str:
     """Validate and normalize an output path and return a final file path.
@@ -159,7 +166,6 @@ def generate_audio(
     jsonl: str,
     output_dir: str,
     use_normalize: bool,
-    max_new_tokens: int,
     silence_duration: float,
 ):
     """Wrapper function that calls the async implementation."""
@@ -171,7 +177,6 @@ def generate_audio(
             jsonl,
             output_dir,
             use_normalize,
-            max_new_tokens,
             silence_duration,
         )
     )
@@ -184,7 +189,6 @@ async def generate_audio_async(
     jsonl: str,
     output_dir: str,
     use_normalize: bool,
-    max_new_tokens: int,
     silence_duration: float,
 ):
     if url is None:
@@ -239,15 +243,15 @@ async def generate_audio_async(
                     "text": text,
                     "prompt_text": prompt_text,
                     "prompt_audio": prompt_audio_base64,
-                    "max_new_tokens": max_new_tokens,
                     "silence_duration": silence_duration,
                     "use_normalize": use_normalize,
+                    "sampling_params": sampling_params,
                 }
             else:
                 payload = {
                     "text": text,
-                    "max_new_tokens": max_new_tokens,
                     "use_normalize": use_normalize,
+                    "sampling_params": sampling_params,
                 }
 
             output_path = output_dir / f"output_{idx}.wav"
@@ -296,6 +300,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
+    sampling_params["max_new_tokens"] = args.max_new_tokens
     generate_audio(
         args.url,
         args.host,
@@ -303,6 +308,5 @@ if __name__ == "__main__":
         args.jsonl,
         args.output_dir,
         args.use_normalize,
-        args.max_new_tokens,
         args.silence_duration,
     )

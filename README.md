@@ -550,6 +550,8 @@ python -m sglang.launch_server \
 
 The first startup takes longer due to compilation. Once you see `The server is fired up and ready to roll!` the server is ready.
 
+Tips: Our end-to-end inference server includes an additional Codec model, which adds approximately 4GB VRAM usage. If you are using a GPU with limited VRAM, please set the SGLang VRAM allocation ratio with the `--mem-fraction-static` flag when starting the server, to ensure enough VRAM is reserved for Codec model.
+
 #### Run Inference
 
 We provide an example script that sends generation requests to the server; you can use it to run inference.
@@ -572,6 +574,8 @@ Parameters:
 - `--use_normalize`: Whether to normalize the text input (**recommended to enable**).
 - `--max_new_tokens`: The maximum number of tokens the model will generate.
 - `--silence_duration`: Silence duration between the reference audio and the generated audio (default: 0 seconds). If noise appears at the beginning of the generated audio (often because it continues the tail end of the prompt), try setting this parameter to 0.1.
+
+Additionally, you can modify and set specific sampling parameters in the `inference_sglang_server.py` file.
 
 ## Demos
 
