@@ -597,7 +597,7 @@ python inference_sglang_server.py --url http://localhost:30000 --jsonl examples/
 ```
 @article{moss2025ttsd,
   title={Text to Spoken Dialogue Generation},
-  author={OpenMOSS Team},
+  author={OpenMOSS},
   year={2025}
 }
 ```
