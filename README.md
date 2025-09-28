@@ -595,7 +595,7 @@ MOSS-TTSD is released under the Apache 2.0 license.
 ```
 @article{moss2025ttsd,
   title={Text to Spoken Dialogue Generation},
-  author={OpenMOSS Team},
+  author={OpenMOSS},
   year={2025}
 }
 ```
