@@ -361,7 +361,7 @@ def normalize_text(text: str) -> str:
     text = re.sub(r'\[(\d+)\]', r'[S\1]', text)
 
     # Remove decorative characters
-    remove_chars = "【】《》（）『』「」～~-_"
+    remove_chars = "【】《》（）『』「」" '"-_“”～~'
 
     # Use positive lookahead to split text by speaker tags (tags themselves are still preserved)
     segments = re.split(r'(?=\[S\d+\])', text.replace("\n", " "))

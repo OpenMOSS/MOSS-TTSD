@@ -1,6 +1,20 @@
 generator_params:
   input_sample_rate: 16000
   output_sample_rate: 32000
+  encoder_downsample_rate: 1280
+  decoder_upsample_rate: 2560
+
+  feature_extractor_kwargs:
+    chunk_length: 30
+    feature_size: 80
+    hop_length: 160
+    n_fft: 400
+    n_samples: 480000
+    nb_max_frames: 3000
+    padding_side: right
+    padding_value: 0.0
+    return_attention_mask: false
+    sampling_rate: 16000
 
   # Codec / model architecture (inference required)
   semantic_encoder_kwargs:  # 100hz -> 50hz

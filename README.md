@@ -28,7 +28,7 @@ MOSS-TTSD supports voice cloning and long single-session speech generation, maki
 
 ## Highlights
 
-- **Highly Expressive Dialogue Speech**: Built on unified semantic-acoustic neural audio codec, a pre-trained large language model, millions of hours of TTS data, and 600k hours synthetic and real conversational speech, MOSS-TTSD generates highly expressive, human-like dialogue speech with natural conversational prosody.
+- **Highly Expressive Dialogue Speech**: Built on unified semantic-acoustic neural audio codec, a pre-trained large language model, millions of hours of TTS data and conversational speech, MOSS-TTSD generates highly expressive, human-like dialogue speech with natural conversational prosody.
 - **Two-Speaker Voice Cloning**: MOSS-TTSD supports zero-shot two speakers voice cloning and can generate conversational speech with accurate speaker swithcing based on dialogue scripts. Only 10 to 20 seconds of reference audio is needed.
 - **Chinese-English Bilingual Support**: MOSS-TTSD enables highly expressive speech generation in both Chinese and English.
 - **Long-Form Speech Generation**: Thanks to low-bitrate codec and training framework optimization, MOSS-TTSD has been trained for long speech generation (Training maximum length is 1700s).
@@ -36,7 +36,7 @@ MOSS-TTSD supports voice cloning and long single-session speech generation, maki
 
 ## News 🚀
 
- - **[2025-10-31]** MOSS-TTSD v0.7 is released! v0.7 has significantly improved audio quality, voice cloning capability, and stability, greatly extended single-pass generation length (960s→1700s), and more reliably generates speech events following speaker tags. We recommend using the v0.7 model by default.
+ - **[2025-11-01]** MOSS-TTSD v0.7 is released! v0.7 significantly improves audio quality, voice cloning capability, and stability, adds support for 32 kHz high‑quality output, greatly extends single‑pass generation length (960s→1700s), and more reliably generates speech events following speaker tags. We recommend using the v0.7 model by default.
 - **[2025-09-09]** We supported SGLang inference engine to accelerate model inference by up to **16x**.
 - **[2025-08-25]** We released the 32khz version of XY-Tokenizer.
 - **[2025-08-12]** We add support for streaming inference in MOSS-TTSD v0.5.
