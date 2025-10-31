@@ -28,20 +28,21 @@ MOSS-TTSD supports voice cloning and long single-session speech generation, maki
 
 ## Highlights
 
-- **Highly Expressive Dialogue Speech**: Built on unified semantic-acoustic neural audio codec, a pre-trained large language model, millions of hours of TTS data, and 400k hours synthetic and real conversational speech, MOSS-TTSD generates highly expressive, human-like dialogue speech with natural conversational prosody.
+- **Highly Expressive Dialogue Speech**: Built on unified semantic-acoustic neural audio codec, a pre-trained large language model, millions of hours of TTS data, and 600k hours synthetic and real conversational speech, MOSS-TTSD generates highly expressive, human-like dialogue speech with natural conversational prosody.
 - **Two-Speaker Voice Cloning**: MOSS-TTSD supports zero-shot two speakers voice cloning and can generate conversational speech with accurate speaker swithcing based on dialogue scripts. Only 10 to 20 seconds of reference audio is needed.
 - **Chinese-English Bilingual Support**: MOSS-TTSD enables highly expressive speech generation in both Chinese and English.
-- **Long-Form Speech Generation**: Thanks to low-bitrate codec and training framework optimization, MOSS-TTSD has been trained for long speech generation (Training maximum length is 960s).
+- **Long-Form Speech Generation**: Thanks to low-bitrate codec and training framework optimization, MOSS-TTSD has been trained for long speech generation (Training maximum length is 1700s).
 - **Fully Open Source & Commercial-Ready**: MOSS-TTSD and its future updates will be fully open-source and support free commercial use.
 
 ## News 🚀
 
+ - **[2025-10-31]** MOSS-TTSD v0.7 is released! v0.7 has significantly improved audio quality, voice cloning capability, and stability, greatly extended single-pass generation length (960s→1700s), and more reliably generates speech events following speaker tags. We recommend using the v0.7 model by default.
 - **[2025-09-09]** We supported SGLang inference engine to accelerate model inference by up to **16x**.
 - **[2025-08-25]** We released the 32khz version of XY-Tokenizer.
 - **[2025-08-12]** We add support for streaming inference in MOSS-TTSD v0.5.
 - **[2025-07-29]** We provide the SiliconFlow API interface and usage examples for MOSS-TTSD v0.5.
 - **[2025-07-16]** We open-source the fine-tuning code for MOSS-TTSD v0.5, supporting full-parameter fine-tuning, LoRA fine-tuning, and multi-node training.
-- **[2025-07-04]** MOSS-TTSD v0.5 is released! v0.5 has enhanced the accuracy of timbre switching, voice cloning capability, and model stability. We recommend using the v0.5 model by default.
+- **[2025-07-04]** MOSS-TTSD v0.5 is released! v0.5 has enhanced the accuracy of timbre switching, voice cloning capability, and model stability.
 - **[2025-06-20]** MOSS-TTSD v0 is released! Moreover, we provide a podcast generation pipeline named Podever, which can automatically convert PDF, URL, or long text files into high-quality podcasts.
 
 ## Installation
@@ -62,7 +63,7 @@ You also need to download the XY Tokenizer model weights. You can find the weigh
 
 ```bash
 mkdir -p XY_Tokenizer/weights
-huggingface-cli download fnlp/XY_Tokenizer_TTSD_V0_32k xy_tokenizer.ckpt --local-dir ./XY_Tokenizer/weights/
+huggingface-cli download fnlp/MOSS_TTSD_tokenizer MOSS_TTSD_tokenizer --local-dir ./XY_Tokenizer/weights/
 ```
 
 ## Usage
@@ -89,16 +90,9 @@ Parameters:
 
 #### JSONL Input Format
 
-The input JSONL file should contain one JSON object per line. MOSS-TTSD supports multiple input formats:
+The input JSONL file should contain one JSON object per line. MOSS-TTSD supports two input formats:
 
-**Format 1: Text-only input (No voice cloning, using the model's random timbre)**
-```json
-{
-  "text": "[S1]Speaker 1 dialogue content[S2]Speaker 2 dialogue content[S1]..."
-}
-```
-
-**Format 2: Separate speaker audio references**
+**Format 1: Separate speaker audio references**
 ```json
 {
   "base_path": "/path/to/audio/files",
@@ -110,7 +104,7 @@ The input JSONL file should contain one JSON object per line. MOSS-TTSD supports
 }
 ```
 
-**Format 3: Shared audio reference**
+**Format 2: Shared audio reference**
 ```json
 {
   "base_path": "/path/to/audio/files",
@@ -126,11 +120,11 @@ The input JSONL file should contain one JSON object per line. MOSS-TTSD supports
 - `text`: Dialogue script with speaker tags `[S1]` and `[S2]` indicating speaker turns (required)
 - `base_path`: Base directory path for relative file paths (optional)
 
-**For voice cloning (Format 2):**
+**For voice cloning (Format 1):**
 - `prompt_audio_speaker1/2`: Path to reference audio files for voice cloning (relative to `base_path`)
 - `prompt_text_speaker1/2`: Reference text corresponding to the audio prompts for better voice matching
 
-**For shared reference (Format 3):**
+**For shared reference (Format 2):**
 - `prompt_audio`: Path to shared reference audio file containing both speakers' voices (relative to `base_path`)
 - `prompt_text`: Reference text corresponding to the audio, also using `[S1]` and `[S2]` tags to distinguish speakers
 

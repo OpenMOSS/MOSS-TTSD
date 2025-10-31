@@ -17,8 +17,8 @@ class XY_Tokenizer(nn.Module):
         self.input_sample_rate = generator_params['input_sample_rate']
         self.output_sample_rate = generator_params['output_sample_rate']
         
-        self.encoder_downsample_rate = generator_params['encoder_downsample_rate']
-        self.decoder_upsample_rate = generator_params['decoder_upsample_rate']
+        self.encoder_downsample_rate = 1280
+        self.decoder_upsample_rate = int(self.output_sample_rate / 12.5)
         self.code_dim = generator_params['quantizer_kwargs']['input_dim']
         
         ## Codec part
@@ -49,7 +49,22 @@ class XY_Tokenizer(nn.Module):
         self.enhanced_vocos = Vocos(**generator_params['vocos_kwargs'])
 
         ## Feature extractor
-        self.feature_extractor = MelFeatureExtractor(**generator_params['feature_extractor_kwargs'])
+        default_feature_extractor_kwargs = {
+            'chunk_length': 30,
+            'feature_size': 80,
+            'hop_length': 160,
+            'n_fft': 400,
+            'n_samples': 480000,
+            'nb_max_frames': 3000,
+            'padding_side': 'right',
+            'padding_value': 0.0,
+            'return_attention_mask': False,
+            'sampling_rate': self.input_sample_rate,
+        }
+        fe_kwargs = generator_params.get('feature_extractor_kwargs', {})
+        merged_fe_kwargs = {**default_feature_extractor_kwargs, **fe_kwargs}
+        merged_fe_kwargs['sampling_rate'] = self.input_sample_rate
+        self.feature_extractor = MelFeatureExtractor(**merged_fe_kwargs)
 
     @torch.inference_mode()
     def inference_tokenize(self, x, input_lengths):
