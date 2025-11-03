@@ -1,24 +1,21 @@
-import torch
-import torch.distributed
-import numpy as np
+import copy
 import logging
 import math
-import copy
+from dataclasses import dataclass
+from typing import Optional, Tuple
+
+import librosa
 import numpy as np
 import scipy
 import torch
-import librosa
-
-from typing import Optional, Tuple
-from torch import nn, view_as_real, view_as_complex
-from torch import nn
+import torch.distributed
+from torch import nn, view_as_complex, view_as_real
 from torch.nn import functional as F
-from torch.nn.utils import weight_norm, remove_weight_norm
+from torch.nn.utils import remove_weight_norm, weight_norm
 from torchaudio.functional.functional import _hz_to_mel, _mel_to_hz
-from transformers.activations import ACT2FN
-from dataclasses import dataclass
-from transformers.modeling_outputs import ModelOutput
 from transformers import WhisperModel
+from transformers.activations import ACT2FN
+from transformers.modeling_outputs import ModelOutput
 
 
 # Define function to generate positional embeddings using sine and cosine functions to represent sequence position information
@@ -30,6 +27,7 @@ def sinusoids(length, channels, max_timescale=10000):
     scaled_time = torch.arange(length)[:, np.newaxis] * inv_timescales[np.newaxis, :]
     return torch.cat([torch.sin(scaled_time), torch.cos(scaled_time)], dim=1)
 
+
 # Generate sequence mask to distinguish valid sequence and padding parts
 def get_sequence_mask(inputs, inputs_length):
     if inputs.dim() == 3:
@@ -37,8 +35,11 @@ def get_sequence_mask(inputs, inputs_length):
     else:
         bsz, tgt_len = inputs_length.shape[0], torch.max(inputs_length)
     sequence_mask = torch.arange(0, tgt_len).to(inputs.device)
-    sequence_mask = torch.lt(sequence_mask, inputs_length.reshape(bsz, 1)).view(bsz, tgt_len, 1)
+    sequence_mask = torch.lt(sequence_mask, inputs_length.reshape(bsz, 1)).view(
+        bsz, tgt_len, 1
+    )
     return sequence_mask
+
 
 # Define RMSNorm layer for normalizing hidden states and stabilizing training process
 class RMSNorm(nn.Module):
@@ -53,6 +54,7 @@ class RMSNorm(nn.Module):
         if self.weight.dtype in [torch.float16, torch.bfloat16]:
             hidden_states = hidden_states.to(self.weight.dtype)
         return self.weight * hidden_states
+
 
 # Modified variable-length attention mechanism, supporting FP32 with unified interface
 class VarLenAttention(nn.Module):
@@ -73,7 +75,7 @@ class VarLenAttention(nn.Module):
         assert embed_dim % num_heads == 0, "embed_dim must be divisible by num_heads"
         self.causal = causal
         self.dropout = nn.Dropout(dropout)
-        self.scaling = self.head_dim ** -0.5  # Scaling factor
+        self.scaling = self.head_dim**-0.5  # Scaling factor
 
         # Linear projection layers for Q, K, V and output
         self.k_proj = nn.Linear(embed_dim, embed_dim, bias=False)
@@ -104,18 +106,29 @@ class VarLenAttention(nn.Module):
 
         # Mark valid positions (less than seq_len)
         valid_mask = seq_indices < seq_len_expanded.unsqueeze(-1)  # [bsz, 1, max_len]
-        mask = mask * (valid_mask.unsqueeze(2) & valid_mask.unsqueeze(3)).to(dtype)  # [bsz, 1, max_len, max_len]
+        mask = mask * (valid_mask.unsqueeze(2) & valid_mask.unsqueeze(3)).to(
+            dtype
+        )  # [bsz, 1, max_len, max_len]
 
         # If causal attention, add upper triangular mask
         if self.causal:
-            causal_mask = torch.triu(torch.ones(max_len, max_len, device=device, dtype=torch.bool), diagonal=1)
-            mask = mask * (~causal_mask.unsqueeze(0).unsqueeze(1)).to(dtype)  # Keep only lower triangular part
+            causal_mask = torch.triu(
+                torch.ones(max_len, max_len, device=device, dtype=torch.bool),
+                diagonal=1,
+            )
+            mask = mask * (~causal_mask.unsqueeze(0).unsqueeze(1)).to(
+                dtype
+            )  # Keep only lower triangular part
 
         # Set invalid positions (0) to dtype's minimum value
-        mask = mask + (1.0 - mask) * torch.finfo(dtype).min  # Valid positions unchanged, invalid positions to minimum value
+        mask = (
+            mask + (1.0 - mask) * torch.finfo(dtype).min
+        )  # Valid positions unchanged, invalid positions to minimum value
         return mask
 
-    def forward(self, hidden_states: torch.Tensor, seq_len: torch.Tensor) -> torch.Tensor:
+    def forward(
+        self, hidden_states: torch.Tensor, seq_len: torch.Tensor
+    ) -> torch.Tensor:
         """
         Forward propagation, input and output are [bsz, max_len, embed_dim].
 
@@ -130,43 +143,73 @@ class VarLenAttention(nn.Module):
 
         # Project to Q, K, V
         query = self.q_proj(hidden_states) * self.scaling  # [bsz, max_len, embed_dim]
-        key = self.k_proj(hidden_states)                  # [bsz, max_len, embed_dim]
-        value = self.v_proj(hidden_states)                # [bsz, max_len, embed_dim]
+        key = self.k_proj(hidden_states)  # [bsz, max_len, embed_dim]
+        value = self.v_proj(hidden_states)  # [bsz, max_len, embed_dim]
 
         # Reshape to multi-head form
-        query = query.view(bsz, max_len, self.num_heads, self.head_dim).transpose(1, 2)  # [bsz, num_heads, max_len, head_dim]
-        key = key.view(bsz, max_len, self.num_heads, self.head_dim).transpose(1, 2)      # [bsz, num_heads, max_len, head_dim]
-        value = value.view(bsz, max_len, self.num_heads, self.head_dim).transpose(1, 2)  # [bsz, num_heads, max_len, head_dim]
+        query = query.view(bsz, max_len, self.num_heads, self.head_dim).transpose(
+            1, 2
+        )  # [bsz, num_heads, max_len, head_dim]
+        key = key.view(bsz, max_len, self.num_heads, self.head_dim).transpose(
+            1, 2
+        )  # [bsz, num_heads, max_len, head_dim]
+        value = value.view(bsz, max_len, self.num_heads, self.head_dim).transpose(
+            1, 2
+        )  # [bsz, num_heads, max_len, head_dim]
 
         # Calculate attention scores
-        attn_scores = torch.matmul(query, key.transpose(-1, -2))  # [bsz, num_heads, max_len, max_len]
+        attn_scores = torch.matmul(
+            query, key.transpose(-1, -2)
+        )  # [bsz, num_heads, max_len, max_len]
 
         # Generate attention mask
-        attn_mask = self._create_attention_mask(seq_len, max_len, hidden_states.device, attn_scores.dtype)  # [bsz, 1, max_len, max_len]
+        attn_mask = self._create_attention_mask(
+            seq_len, max_len, hidden_states.device, attn_scores.dtype
+        )  # [bsz, 1, max_len, max_len]
         # Apply mask (additive form, consistent with HubertEncoder)
-        attn_scores = attn_scores + attn_mask  # Invalid positions set to very small value
+        attn_scores = (
+            attn_scores + attn_mask
+        )  # Invalid positions set to very small value
 
         # Softmax calculate attention weights
-        attn_weights = F.softmax(attn_scores, dim=-1)  # [bsz, num_heads, max_len, max_len]
+        attn_weights = F.softmax(
+            attn_scores, dim=-1
+        )  # [bsz, num_heads, max_len, max_len]
         attn_weights = self.dropout(attn_weights)
 
         # Calculate attention output
-        attn_output = torch.matmul(attn_weights, value)  # [bsz, num_heads, max_len, head_dim]
-        attn_output = attn_output.transpose(1, 2).contiguous().view(bsz, max_len, self.embed_dim)  # [bsz, max_len, embed_dim]
+        attn_output = torch.matmul(
+            attn_weights, value
+        )  # [bsz, num_heads, max_len, head_dim]
+        attn_output = (
+            attn_output.transpose(1, 2).contiguous().view(bsz, max_len, self.embed_dim)
+        )  # [bsz, max_len, embed_dim]
 
         # Output projection
         attn_output = self.out_proj(attn_output)  # [bsz, max_len, embed_dim]
 
         return attn_output
 
+
 # Define Transformer layer containing attention mechanism and feedforward network for feature extraction and transformation
 class OmniWhisperTransformerLayer(nn.Module):
-    def __init__(self, activation_function="gelu", d_model=1280, attention_heads=20, ffn_dim=5120, causal=False, ln_type="LayerNorm", attn_type="varlen"):
+    def __init__(
+        self,
+        activation_function="gelu",
+        d_model=1280,
+        attention_heads=20,
+        ffn_dim=5120,
+        causal=False,
+        ln_type="LayerNorm",
+        attn_type="varlen",
+    ):
         super().__init__()
         self.embed_dim = d_model
         # Only keep varlen attention mechanism
         if attn_type != "varlen":
-            raise ValueError(f"Unknown attn_type: {attn_type}. Only 'varlen' is supported.")
+            raise ValueError(
+                f"Unknown attn_type: {attn_type}. Only 'varlen' is supported."
+            )
         self.self_attn = VarLenAttention(self.embed_dim, attention_heads, causal)
         if ln_type == "LayerNorm":
             self.self_attn_layer_norm = nn.LayerNorm(self.embed_dim)
@@ -184,85 +227,105 @@ class OmniWhisperTransformerLayer(nn.Module):
         else:
             raise ValueError(f"Unknown ln_type: {ln_type}")
 
-    def forward(self, hidden_states: torch.Tensor, seq_len: torch.Tensor) -> torch.Tensor:
+    def forward(
+        self, hidden_states: torch.Tensor, seq_len: torch.Tensor
+    ) -> torch.Tensor:
         residual = hidden_states  # [bsz, max_len, embed_dim]
         hidden_states = self.self_attn_layer_norm(hidden_states)
         # from torch.cuda.amp import autocast
         # print(f"{residual.dtype = }")
         # print(f"Autocast enabled: {torch.is_autocast_enabled():}")
         # print(f"after layernorm {hidden_states.dtype = }")
-        hidden_states = self.self_attn(hidden_states, seq_len)  # [bsz, max_len, embed_dim]
+        hidden_states = self.self_attn(
+            hidden_states, seq_len
+        )  # [bsz, max_len, embed_dim]
         hidden_states = residual + hidden_states
         residual = hidden_states
         hidden_states = self.final_layer_norm(hidden_states)
         hidden_states = self.activation_fn(self.fc1(hidden_states))
         hidden_states = self.fc2(hidden_states)
         hidden_states = residual + hidden_states
-        if (hidden_states.dtype == torch.float16 or hidden_states.dtype == torch.bfloat16) and \
-           (torch.isinf(hidden_states).any() or torch.isnan(hidden_states).any()):
+        if (
+            hidden_states.dtype == torch.float16
+            or hidden_states.dtype == torch.bfloat16
+        ) and (torch.isinf(hidden_states).any() or torch.isnan(hidden_states).any()):
             clamp_value = torch.finfo(hidden_states.dtype).max - 1000
-            hidden_states = torch.clamp(hidden_states, min=-clamp_value, max=clamp_value)
+            hidden_states = torch.clamp(
+                hidden_states, min=-clamp_value, max=clamp_value
+            )
         return hidden_states
+
 
 # Define audio encoder to convert input audio features to hidden state representation
 class OmniAudioEncoder(nn.Module):
     def __init__(
-            self, 
-            num_mel_bins=128,  # Input feature Mel band number, usually the dimension of Mel spectrogram
-            sampling_rate=16000,  # Audio sampling rate, unit Hz
-            hop_length=160,  # Frame shift length (sample number) when calculating Mel spectrogram
-            stride_size=2,  # Convolution layer step, used for downsampling
-            kernel_size=3,  # Convolution kernel size, controlling receptive field
-            d_model=1280,  # Model's hidden state dimension (embedding dimension)
-            scale_embedding=True,  # Whether to scale embedding (usually used for stabilizing training)
-            max_audio_seconds=30,  # Maximum audio duration supported (seconds)
-            encoder_layers=32,  # Transformer encoder layer number
-            encoder_attention_heads=20,  # Attention head number for each Transformer layer
-            encoder_ffn_dim=5120,  # Intermediate dimension for feedforward network
-            activation_function="gelu",  # Activation function type, default GELU
-            attn_type="varlen"  # New parameter, select attention mechanism type
-        ):
+        self,
+        num_mel_bins=128,  # Input feature Mel band number, usually the dimension of Mel spectrogram
+        sampling_rate=16000,  # Audio sampling rate, unit Hz
+        hop_length=160,  # Frame shift length (sample number) when calculating Mel spectrogram
+        stride_size=2,  # Convolution layer step, used for downsampling
+        kernel_size=3,  # Convolution kernel size, controlling receptive field
+        d_model=1280,  # Model's hidden state dimension (embedding dimension)
+        scale_embedding=True,  # Whether to scale embedding (usually used for stabilizing training)
+        max_audio_seconds=30,  # Maximum audio duration supported (seconds)
+        encoder_layers=32,  # Transformer encoder layer number
+        encoder_attention_heads=20,  # Attention head number for each Transformer layer
+        encoder_ffn_dim=5120,  # Intermediate dimension for feedforward network
+        activation_function="gelu",  # Activation function type, default GELU
+        attn_type="varlen",  # New parameter, select attention mechanism type
+    ):
         super().__init__()
         # Calculate maximum sequence length: Convert sampling rate to frame number after considering downsampling step
-        self.max_source_positions = (max_audio_seconds * sampling_rate // hop_length) // stride_size
+        self.max_source_positions = (
+            max_audio_seconds * sampling_rate // hop_length
+        ) // stride_size
         # Embedding scaling factor, if enabled sqrt(d_model), otherwise 1.0
         self.embed_scale = math.sqrt(d_model) if scale_embedding else 1.0
         self.num_mel_bins = num_mel_bins  # Save Mel band number
         self.d_model = d_model  # Save hidden state dimension
         self.stride_size = stride_size
-        
+
         # First convolution layer: Convert Mel spectrogram features (num_mel_bins) to hidden dimension (d_model)
-        self.conv1 = nn.Conv1d(num_mel_bins, d_model, kernel_size=kernel_size, padding=1)
+        self.conv1 = nn.Conv1d(
+            num_mel_bins, d_model, kernel_size=kernel_size, padding=1
+        )
         # Second convolution layer: Apply downsampling with stride_size
-        self.conv2 = nn.Conv1d(d_model, d_model, kernel_size=kernel_size, stride=stride_size, padding=1)
-        
+        self.conv2 = nn.Conv1d(
+            d_model, d_model, kernel_size=kernel_size, stride=stride_size, padding=1
+        )
+
         # Register positional embedding buffer, using sine function to generate, shape (max_source_positions, d_model)
-        self.register_buffer("positional_embedding", sinusoids(self.max_source_positions, d_model))
-        
+        self.register_buffer(
+            "positional_embedding", sinusoids(self.max_source_positions, d_model)
+        )
+
         # Create Transformer encoder layer list, each layer contains attention mechanism and feedforward network
-        self.layers = nn.ModuleList([
-            OmniWhisperTransformerLayer(
-                activation_function=activation_function, 
-                d_model=d_model, 
-                attention_heads=encoder_attention_heads, 
-                ffn_dim=encoder_ffn_dim, 
-                causal=False,  # Encoder does not need causal attention
-                attn_type=attn_type  # Pass attention type
-            ) for _ in range(encoder_layers)
-        ])
-        
+        self.layers = nn.ModuleList(
+            [
+                OmniWhisperTransformerLayer(
+                    activation_function=activation_function,
+                    d_model=d_model,
+                    attention_heads=encoder_attention_heads,
+                    ffn_dim=encoder_ffn_dim,
+                    causal=False,  # Encoder does not need causal attention
+                    attn_type=attn_type,  # Pass attention type
+                )
+                for _ in range(encoder_layers)
+            ]
+        )
+
         # Last layer normalization for stable output
         self.layer_norm = nn.LayerNorm(d_model)
 
     def forward(self, input_features, input_length, output_hidden_states=False):
         """
         Forward propagation function to convert input audio features to hidden state representation
-        
+
         Parameters:
             input_features (torch.Tensor): Input Mel spectrogram features, shape [bsz, num_mel_bins, seq_len]
             input_length (torch.Tensor): Input sequence length for each sample, shape [bsz]
             output_hidden_states (bool, optional): Whether to return hidden states for each layer, default False
-        
+
         Returns:
             if output_hidden_states is False:
                 hidden_states (torch.Tensor): Encoded hidden states, shape [bsz, d_model, tgt_len]
@@ -274,160 +337,187 @@ class OmniAudioEncoder(nn.Module):
         """
         # Ensure input feature data type consistent with convolution layer weights
         input_features = input_features.to(self.conv1.weight.dtype)  # (B, D, T)
-        
+
         # First layer convolution + GELU activation, Convert Mel spectrogram to hidden states
         inputs_embeds = nn.functional.gelu(self.conv1(input_features))  # (B, D, T)
-        
+
         # Second layer convolution + GELU activation, Apply downsampling with stride_size
         inputs_embeds = nn.functional.gelu(self.conv2(inputs_embeds))  # (B, D, T)
-        
+
         # Calculate output length: Result after downsampling with stride_size
         output_length = (input_length // self.stride_size).long()  # (B,)
-        
+
         # Adjust dimension order to [bsz, seq_len, d_model] for Transformer input
         hidden_states = inputs_embeds.permute(0, 2, 1)  # (B, T, D)
-        
+
         # Get batch size and target sequence length
         bsz, tgt_len, _ = hidden_states.size()
-        
+
         # According to current sequence length, take or use complete positional embedding
         if tgt_len < self.positional_embedding.shape[0]:
             current_positional_embedding = self.positional_embedding[:tgt_len]
         else:
             current_positional_embedding = self.positional_embedding
-        
+
         # Add input embedding to positional embedding, convert to float to avoid precision issues
-        hidden_states = (hidden_states.to(torch.float32) + current_positional_embedding).to(hidden_states.dtype)
-        
+        hidden_states = (
+            hidden_states.to(torch.float32) + current_positional_embedding
+        ).to(hidden_states.dtype)
+
         # Generate sequence mask for processing variable-length sequence
-        attention_mask = get_sequence_mask(hidden_states, output_length)  # [bsz, tgt_len, 1]
-        
+        attention_mask = get_sequence_mask(
+            hidden_states, output_length
+        )  # [bsz, tgt_len, 1]
+
         # Initialize hidden states list for storing output for each layer (if needed)
         hidden_states_all_layers = () if output_hidden_states else None
-        
+
         # Process hidden states through Transformer encoder layer by layer
         for encoder_layer in self.layers:
             if output_hidden_states:
                 hidden_states_all_layers = hidden_states_all_layers + (hidden_states,)
-            hidden_states = encoder_layer(hidden_states, output_length)  # [bsz, tgt_len, d_model]
-        
+            hidden_states = encoder_layer(
+                hidden_states, output_length
+            )  # [bsz, tgt_len, d_model]
+
         # Normalize hidden states
         hidden_states = self.layer_norm(hidden_states)  # [bsz, tgt_len, d_model]
         if output_hidden_states:
             hidden_states_all_layers = hidden_states_all_layers + (hidden_states,)
-        
+
         # Use mask to zero out padding parts and ensure output only retains valid data
-        hidden_states = torch.where(attention_mask, hidden_states, 0)  # [bsz, tgt_len, d_model]
+        hidden_states = torch.where(
+            attention_mask, hidden_states, 0
+        )  # [bsz, tgt_len, d_model]
         hidden_states = hidden_states.transpose(1, 2)  # [bsz, d_model, tgt_len]
-        
+
         if not output_hidden_states:
-            return hidden_states, output_length  
+            return hidden_states, output_length
         else:
             return hidden_states, output_length, hidden_states_all_layers
-    
+
+
 # Define audio decoder to convert hidden states to Mel spectrogram
 class OmniAudioDecoder(nn.Module):
     def __init__(
-            self, 
-            num_mel_bins=128, 
-            sampling_rate=16000, 
-            hop_length=160, 
-            stride_size=2, 
-            kernel_size=3, 
-            d_model=1280, 
-            scale_embedding=True, 
-            max_audio_seconds=30, 
-            decoder_layers=32, 
-            decoder_attention_heads=20, 
-            decoder_ffn_dim=5120, 
-            activation_function="gelu",
-            attn_type="varlen"  # New parameter, select attention mechanism type
-        ):
+        self,
+        num_mel_bins=128,
+        sampling_rate=16000,
+        hop_length=160,
+        stride_size=2,
+        kernel_size=3,
+        d_model=1280,
+        scale_embedding=True,
+        max_audio_seconds=30,
+        decoder_layers=32,
+        decoder_attention_heads=20,
+        decoder_ffn_dim=5120,
+        activation_function="gelu",
+        attn_type="varlen",  # New parameter, select attention mechanism type
+    ):
         super().__init__()
-        self.max_source_positions = (max_audio_seconds * sampling_rate // hop_length) // stride_size
+        self.max_source_positions = (
+            max_audio_seconds * sampling_rate // hop_length
+        ) // stride_size
         self.embed_scale = math.sqrt(d_model) if scale_embedding else 1.0
         self.num_mel_bins = num_mel_bins
         self.d_model = d_model
         self.stride_size = stride_size
-        
+
         # Correct transpose convolution layer to ensure output length close to stride_size times
         self.deconv1 = nn.ConvTranspose1d(
-            d_model, 
-            d_model, 
-            kernel_size=kernel_size, 
-            stride=stride_size, 
+            d_model,
+            d_model,
+            kernel_size=kernel_size,
+            stride=stride_size,
             padding=0,  # Do not fill input side
-            output_padding=0  # Can be adjusted to precisely control length
+            output_padding=0,  # Can be adjusted to precisely control length
         )
         self.deconv2 = nn.ConvTranspose1d(
-            d_model, 
-            num_mel_bins, 
-            kernel_size=kernel_size, 
+            d_model,
+            num_mel_bins,
+            kernel_size=kernel_size,
             stride=1,  # Only convert channels, do not change length
-            padding=0
+            padding=0,
         )
-        
+
         # Positional embedding remains consistent
-        self.register_buffer("positional_embedding", sinusoids(self.max_source_positions, d_model)) # (T, D)
-        
+        self.register_buffer(
+            "positional_embedding", sinusoids(self.max_source_positions, d_model)
+        )  # (T, D)
+
         # Transformer decoder layer
-        self.layers = nn.ModuleList([
-            OmniWhisperTransformerLayer(
-                activation_function=activation_function, 
-                d_model=d_model, 
-                attention_heads=decoder_attention_heads, 
-                ffn_dim=decoder_ffn_dim, 
-                causal=False,  # Decoder uses causal attention
-                attn_type=attn_type  # Pass attention type
-            ) for _ in range(decoder_layers)
-        ])
+        self.layers = nn.ModuleList(
+            [
+                OmniWhisperTransformerLayer(
+                    activation_function=activation_function,
+                    d_model=d_model,
+                    attention_heads=decoder_attention_heads,
+                    ffn_dim=decoder_ffn_dim,
+                    causal=False,  # Decoder uses causal attention
+                    attn_type=attn_type,  # Pass attention type
+                )
+                for _ in range(decoder_layers)
+            ]
+        )
         self.layer_norm = nn.LayerNorm(d_model)
 
-    def forward(self, hidden_states, input_length): # (B, D, T)
+    def forward(self, hidden_states, input_length):  # (B, D, T)
         # Input is hidden state output from encoder
-        hidden_states = hidden_states.transpose(1, 2) # (B, T, D)
+        hidden_states = hidden_states.transpose(1, 2)  # (B, T, D)
         bsz, tgt_len, _ = hidden_states.size()
-        
+
         # Add positional embedding
         if tgt_len < self.positional_embedding.shape[0]:
-            current_positional_embedding = self.positional_embedding[:tgt_len] # (T, D)
+            current_positional_embedding = self.positional_embedding[:tgt_len]  # (T, D)
         else:
             current_positional_embedding = self.positional_embedding
-        hidden_states = (hidden_states.to(torch.float32) + current_positional_embedding).to(hidden_states.dtype) # (B, T, D)
-        
+        hidden_states = (
+            hidden_states.to(torch.float32) + current_positional_embedding
+        ).to(
+            hidden_states.dtype
+        )  # (B, T, D)
+
         # Generate sequence mask
-        attention_mask = get_sequence_mask(hidden_states, input_length)  # [bsz, tgt_len, 1]
-        
+        attention_mask = get_sequence_mask(
+            hidden_states, input_length
+        )  # [bsz, tgt_len, 1]
+
         # Process through decoder layer
         for decoder_layer in self.layers:
-            hidden_states = decoder_layer(hidden_states, input_length)  # [bsz, tgt_len, d_model]
-        
+            hidden_states = decoder_layer(
+                hidden_states, input_length
+            )  # [bsz, tgt_len, d_model]
+
         # Final layer normalization
         hidden_states = self.layer_norm(hidden_states)  # [bsz, tgt_len, d_model]
-        
+
         # Use mask to zero out padding parts
-        hidden_states = torch.where(attention_mask, hidden_states, 0)  # [bsz, tgt_len, d_model]
-        
+        hidden_states = torch.where(
+            attention_mask, hidden_states, 0
+        )  # [bsz, tgt_len, d_model]
+
         # Process through transpose convolution layer to reconstruct audio features
         hidden_states = hidden_states.permute(0, 2, 1)  # (B, D, T)
-        output_features = nn.functional.gelu(self.deconv1(hidden_states)) # (B, D, T)
-        output_features = nn.functional.gelu(self.deconv2(output_features)) # (B, D, T)
-        
+        output_features = nn.functional.gelu(self.deconv1(hidden_states))  # (B, D, T)
+        output_features = nn.functional.gelu(self.deconv2(output_features))  # (B, D, T)
+
         # If strictly stride_size times length is needed, can trim extra parts
         expected_length = tgt_len * self.stride_size
         if output_features.size(2) > expected_length:
             output_features = output_features[:, :, :expected_length]
-        
+
         output_length = input_length * self.stride_size
         # Output shape: [bsz, num_mel_bins, seq_len]
         return output_features, output_length
+
 
 # The following part remains unchanged
 class ResidualDownConv(nn.Module):
     def __init__(self, d_model=1280, avg_pooler=4):
         """
         Downsampling module containing residual connection and convolution operation
-        
+
         Parameters:
             d_model (int): Input and output hidden dimension
             avg_pooler (int): Downsampling factor (convolution step)
@@ -436,52 +526,58 @@ class ResidualDownConv(nn.Module):
         self.d_model = d_model
         self.avg_pooler = avg_pooler
         self.intermediate_dim = d_model * avg_pooler
-        
+
         # Convolution layer for downsampling
-        self.gate_proj = nn.Conv1d(d_model, self.intermediate_dim, avg_pooler, avg_pooler, bias=False)
-        self.up_proj = nn.Conv1d(d_model, self.intermediate_dim, avg_pooler, avg_pooler, bias=False)
-        
+        self.gate_proj = nn.Conv1d(
+            d_model, self.intermediate_dim, avg_pooler, avg_pooler, bias=False
+        )
+        self.up_proj = nn.Conv1d(
+            d_model, self.intermediate_dim, avg_pooler, avg_pooler, bias=False
+        )
+
         # Downsampled linear projection
-        self.down_proj = nn.Linear(self.intermediate_dim, self.intermediate_dim, bias=False)
-        
+        self.down_proj = nn.Linear(
+            self.intermediate_dim, self.intermediate_dim, bias=False
+        )
+
         # Activation function and layer normalization
-        self.act_fn = ACT2FN['silu']
+        self.act_fn = ACT2FN["silu"]
         self.layer_norm = nn.LayerNorm(self.intermediate_dim)
 
     def forward(self, x, input_length):
         """
         Forward propagation, execute downsampling and residual processing
-        
+
         Parameters:
             x (torch.Tensor): Input tensor, shape [B, D, T]
-        
+
         Returns:
             res (torch.Tensor): Downsampled feature, shape [B, intermediate_dim, seq_len // avg_pooler]
             valid_mask (torch.Tensor): Valid sequence mask
         """
         output_length = input_length // self.avg_pooler
-        x = x.transpose(1, 2) # (B, T, D)
-        batch_size, seq_len, _ = x.shape # (B, T, D)
+        x = x.transpose(1, 2)  # (B, T, D)
+        batch_size, seq_len, _ = x.shape  # (B, T, D)
         if seq_len % self.avg_pooler != 0:
             pad_size = self.avg_pooler - seq_len % self.avg_pooler
             x = F.pad(x, (0, pad_size), "constant", 0)
-        
-        xt = x.permute(0, 2, 1) # (B, D, T)
+
+        xt = x.permute(0, 2, 1)  # (B, D, T)
         g = self.gate_proj(xt).permute(0, 2, 1)  # (B, T, D)
-        u = self.up_proj(xt).permute(0, 2, 1) # (B, T, D)
+        u = self.up_proj(xt).permute(0, 2, 1)  # (B, T, D)
         x = x.reshape(batch_size, -1, self.intermediate_dim)  # (B, T, D)
 
-        c = self.down_proj(self.act_fn(g) * u) # (B, T, D)
-        res = self.layer_norm(c + x) # (B, T, D)
-        res = res.transpose(1, 2) # (B, D, T)
-        return res, output_length # (B, D, T)
-    
-    
+        c = self.down_proj(self.act_fn(g) * u)  # (B, T, D)
+        res = self.layer_norm(c + x)  # (B, T, D)
+        res = res.transpose(1, 2)  # (B, D, T)
+        return res, output_length  # (B, D, T)
+
+
 class UpConv(nn.Module):
     def __init__(self, d_model=1280, stride=4):
         """
         Simple upsampling module using transpose convolution
-        
+
         Parameters:
             d_model (int): Input and output hidden dimension
             stride (int): Upsampling factor (transpose convolution step)
@@ -489,23 +585,23 @@ class UpConv(nn.Module):
         super().__init__()
         self.d_model = d_model
         self.stride = stride
-        
+
         # Simple transpose convolution layer to keep channel number consistent
         self.up_conv = nn.ConvTranspose1d(
-            self.stride * d_model, 
-            d_model, 
-            kernel_size=stride, 
-            stride=stride, 
-            bias=False
+            self.stride * d_model,
+            d_model,
+            kernel_size=stride,
+            stride=stride,
+            bias=False,
         )
 
     def forward(self, x, input_length):
         """
         Forward propagation, execute upsampling
-        
+
         Parameters:
             x (torch.Tensor): Input tensor, shape [B, D * stride, T]
-        
+
         Returns:
             res (torch.Tensor): Upsampled feature, shape [B, D, T * stride]
         """
@@ -513,21 +609,21 @@ class UpConv(nn.Module):
         res = self.up_conv(x)
         output_length = input_length * self.stride
         return res, output_length
-    
+
 
 # Define Transformer encoder containing multiple Transformer layers for feature extraction and transformation
 class Transformer(nn.Module):
     def __init__(
-            self, 
-            input_dim=1280,  # Input feature dimension
-            d_model=1280,  # Model's hidden state dimension (embedding dimension)
-            output_dim=1280,  # Output feature dimension
-            max_source_positions=1500,  # Maximum sequence length for positional embedding
-            encoder_layers=32,  # Transformer encoder layer number
-            encoder_attention_heads=20,  # Attention head number for each Transformer layer
-            encoder_ffn_dim=5120,  # Intermediate dimension for feedforward network
-            activation_function="gelu",  # Activation function type, default GELU
-            attn_type="varlen"  # Attention mechanism type
+        self,
+        input_dim=1280,  # Input feature dimension
+        d_model=1280,  # Model's hidden state dimension (embedding dimension)
+        output_dim=1280,  # Output feature dimension
+        max_source_positions=1500,  # Maximum sequence length for positional embedding
+        encoder_layers=32,  # Transformer encoder layer number
+        encoder_attention_heads=20,  # Attention head number for each Transformer layer
+        encoder_ffn_dim=5120,  # Intermediate dimension for feedforward network
+        activation_function="gelu",  # Activation function type, default GELU
+        attn_type="varlen",  # Attention mechanism type
     ):
         super().__init__()
         self.input_dim = input_dim  # Save input dimension
@@ -542,20 +638,25 @@ class Transformer(nn.Module):
             self.proj = None  # No need for input projection layer
 
         # Register positional embedding buffer, using sine function to generate, shape (max_source_positions, d_model)
-        self.register_buffer("positional_embedding", sinusoids(self.max_source_positions, d_model))
-        
+        self.register_buffer(
+            "positional_embedding", sinusoids(self.max_source_positions, d_model)
+        )
+
         # Create Transformer encoder layer list, each layer contains attention mechanism and feedforward network
-        self.layers = nn.ModuleList([
-            OmniWhisperTransformerLayer(
-                activation_function=activation_function, 
-                d_model=d_model, 
-                attention_heads=encoder_attention_heads, 
-                ffn_dim=encoder_ffn_dim, 
-                causal=False,  # Encoder does not need causal attention
-                attn_type=attn_type  # Pass attention type
-            ) for _ in range(encoder_layers)
-        ])
-        
+        self.layers = nn.ModuleList(
+            [
+                OmniWhisperTransformerLayer(
+                    activation_function=activation_function,
+                    d_model=d_model,
+                    attention_heads=encoder_attention_heads,
+                    ffn_dim=encoder_ffn_dim,
+                    causal=False,  # Encoder does not need causal attention
+                    attn_type=attn_type,  # Pass attention type
+                )
+                for _ in range(encoder_layers)
+            ]
+        )
+
         # Last layer normalization for stable output
         self.layer_norm = nn.LayerNorm(d_model)
 
@@ -565,15 +666,20 @@ class Transformer(nn.Module):
         else:
             self.out_proj = None  # No need for output projection layer
 
-    def forward(self, input_features: torch.Tensor, input_length: torch.Tensor, output_hidden_states: bool = False):
+    def forward(
+        self,
+        input_features: torch.Tensor,
+        input_length: torch.Tensor,
+        output_hidden_states: bool = False,
+    ):
         """
         Forward propagation function to convert input features through Transformer layer to hidden state representation
-        
+
         Parameters:
             input_features (torch.Tensor): Input features, shape [bsz, input_dim, seq_len] (B, input_dim, T)
             input_length (torch.Tensor): Input sequence length for each sample, shape [bsz]
             output_hidden_states (bool, optional): Whether to return hidden states for each layer, default False
-        
+
         Returns:
             if output_hidden_states is False:
                 hidden_states (torch.Tensor): Encoded hidden states, shape [bsz, output_dim, seq_len] (B, output_dim, T)
@@ -588,57 +694,79 @@ class Transformer(nn.Module):
 
         # If there is input projection layer, map input features from input_dim to d_model
         if self.proj is not None:
-            hidden_states = self.proj(input_features.permute(0, 2, 1)).permute(0, 2, 1)  # [bsz, d_model, seq_len] (B, D, T)
+            hidden_states = self.proj(input_features.permute(0, 2, 1)).permute(
+                0, 2, 1
+            )  # [bsz, d_model, seq_len] (B, D, T)
         else:
             hidden_states = input_features  # [bsz, d_model, seq_len] (B, D, T)
 
         # Adjust input dimension order to [bsz, seq_len, d_model] for Transformer input
-        hidden_states = hidden_states.permute(0, 2, 1)  # [bsz, seq_len, d_model] (B, T, D)
-        
+        hidden_states = hidden_states.permute(
+            0, 2, 1
+        )  # [bsz, seq_len, d_model] (B, T, D)
+
         # Get batch size and target sequence length
         bsz, tgt_len, _ = hidden_states.size()
-        
+
         # According to current sequence length, take or use complete positional embedding
         if tgt_len < self.positional_embedding.shape[0]:
-            current_positional_embedding = self.positional_embedding[:tgt_len]  # [tgt_len, d_model]
+            current_positional_embedding = self.positional_embedding[
+                :tgt_len
+            ]  # [tgt_len, d_model]
         else:
-            current_positional_embedding = self.positional_embedding  # [max_source_positions, d_model]
-        
+            current_positional_embedding = (
+                self.positional_embedding
+            )  # [max_source_positions, d_model]
+
         # Add input features to positional embedding, convert to float to avoid precision issues
-        hidden_states = (hidden_states.to(torch.float32) + current_positional_embedding).to(hidden_states.dtype)  # [bsz, seq_len, d_model]
-        
+        hidden_states = (
+            hidden_states.to(torch.float32) + current_positional_embedding
+        ).to(
+            hidden_states.dtype
+        )  # [bsz, seq_len, d_model]
+
         # Generate sequence mask for processing variable-length sequence
-        attention_mask = get_sequence_mask(hidden_states, output_length)  # [bsz, tgt_len, 1]
-        
+        attention_mask = get_sequence_mask(
+            hidden_states, output_length
+        )  # [bsz, tgt_len, 1]
+
         # Initialize hidden states list for storing output for each layer (if needed)
         hidden_states_all_layers = () if output_hidden_states else None
-        
+
         # Process hidden states through Transformer encoder layer by layer
         for encoder_layer in self.layers:
             if output_hidden_states:
                 hidden_states_all_layers = hidden_states_all_layers + (hidden_states,)
-            hidden_states = encoder_layer(hidden_states, output_length)  # [bsz, seq_len, d_model]
-        
+            hidden_states = encoder_layer(
+                hidden_states, output_length
+            )  # [bsz, seq_len, d_model]
+
         # Normalize hidden states
         hidden_states = self.layer_norm(hidden_states)  # [bsz, seq_len, d_model]
         if output_hidden_states:
             hidden_states_all_layers = hidden_states_all_layers + (hidden_states,)
-        
+
         # Use mask to zero out padding parts and ensure output only retains valid data
-        hidden_states = torch.where(attention_mask, hidden_states, 0)  # [bsz, seq_len, d_model]
-        
+        hidden_states = torch.where(
+            attention_mask, hidden_states, 0
+        )  # [bsz, seq_len, d_model]
+
         # Adjust dimension order to [bsz, d_model, seq_len]
-        hidden_states = hidden_states.transpose(1, 2)  # [bsz, d_model, seq_len] (B, D, T)
+        hidden_states = hidden_states.transpose(
+            1, 2
+        )  # [bsz, d_model, seq_len] (B, D, T)
 
         # If there is output projection layer, map hidden states from d_model to output_dim
         if self.out_proj is not None:
-            hidden_states = self.out_proj(hidden_states.permute(0, 2, 1)).permute(0, 2, 1)  # [bsz, output_dim, seq_len] (B, output_dim, T)
+            hidden_states = self.out_proj(hidden_states.permute(0, 2, 1)).permute(
+                0, 2, 1
+            )  # [bsz, output_dim, seq_len] (B, output_dim, T)
 
         if not output_hidden_states:
             return hidden_states, output_length
         else:
             return hidden_states, output_length, hidden_states_all_layers
-        
+
 
 def safe_log(x: torch.Tensor, clip_val: float = 1e-7) -> torch.Tensor:
     """
@@ -1477,4 +1605,3 @@ class Vocos(nn.Module):
         x = self.head(x)
         output_length = input_length * self.hop_size
         return x[:, None, :], output_length
-

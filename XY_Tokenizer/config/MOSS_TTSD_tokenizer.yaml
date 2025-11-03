@@ -112,4 +112,3 @@ generator_params:
     n_fft: 1280
     hop_size: 320
     padding: "same"
-

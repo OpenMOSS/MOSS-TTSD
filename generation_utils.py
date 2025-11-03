@@ -8,7 +8,9 @@ import torchaudio
 MAX_CHANNELS = 8
 
 
-def pad_or_truncate_to_seconds(wav: torch.Tensor, target_seconds: float, sr: int) -> torch.Tensor:
+def pad_or_truncate_to_seconds(
+    wav: torch.Tensor, target_seconds: float, sr: int
+) -> torch.Tensor:
     """Pad or truncate a mono waveform to target length in seconds.
 
     Args:
@@ -31,12 +33,15 @@ def pad_or_truncate_to_seconds(wav: torch.Tensor, target_seconds: float, sr: int
     else:
         pad_len = target_len - cur_len
         out = torch.cat(
-            [wav_1d, torch.zeros(pad_len, dtype=wav_1d.dtype, device=wav_1d.device)], dim=-1
+            [wav_1d, torch.zeros(pad_len, dtype=wav_1d.dtype, device=wav_1d.device)],
+            dim=-1,
         )
     return out.unsqueeze(0)
 
 
-def crossfade_concat(segments: list, sample_rate: int, crossfade_seconds: float = 0.1) -> torch.Tensor:
+def crossfade_concat(
+    segments: list, sample_rate: int, crossfade_seconds: float = 0.1
+) -> torch.Tensor:
     """Concatenate segments with linear crossfade.
 
     Args:
@@ -61,10 +66,16 @@ def crossfade_concat(segments: list, sample_rate: int, crossfade_seconds: float 
         if cf_len <= 0:
             out = torch.cat([out, nxt], dim=-1)
             continue
-        fade_out = torch.linspace(1.0, 0.0, steps=cf_len, dtype=out.dtype, device=out.device)
-        fade_in = torch.linspace(0.0, 1.0, steps=cf_len, dtype=nxt.dtype, device=nxt.device)
+        fade_out = torch.linspace(
+            1.0, 0.0, steps=cf_len, dtype=out.dtype, device=out.device
+        )
+        fade_in = torch.linspace(
+            0.0, 1.0, steps=cf_len, dtype=nxt.dtype, device=nxt.device
+        )
         overlap = out[0, -cf_len:] * fade_out + nxt[0, :cf_len] * fade_in
-        out = torch.cat([out[:, :-cf_len], overlap.unsqueeze(0), nxt[:, cf_len:]], dim=-1)
+        out = torch.cat(
+            [out[:, :-cf_len], overlap.unsqueeze(0), nxt[:, cf_len:]], dim=-1
+        )
     return out
 
 
@@ -133,8 +144,8 @@ def process_jsonl_item(item):
     # Try Format 1: separate speaker references
     s1 = item.get("prompt_audio_speaker1", "")
     s2 = item.get("prompt_audio_speaker2", "")
-    has_s1 = ((isinstance(s1, str) and s1) or isinstance(s1, tuple))
-    has_s2 = ((isinstance(s2, str) and s2) or isinstance(s2, tuple))
+    has_s1 = (isinstance(s1, str) and s1) or isinstance(s1, tuple)
+    has_s2 = (isinstance(s2, str) and s2) or isinstance(s2, tuple)
 
     if has_s1 and has_s2:
         if isinstance(s1, str) and s1:
@@ -159,7 +170,9 @@ def process_jsonl_item(item):
         return {"text": text, "prompt_text": prompt_text, "prompt_audio": prompt_audio}
 
     # Otherwise, no supported prompt found → reject (text-only unsupported)
-    raise ValueError("Input must include prompt (Format 1 or 2). Text-only is not supported.")
+    raise ValueError(
+        "Input must include prompt (Format 1 or 2). Text-only is not supported."
+    )
 
 
 def load_audio_data(prompt_audio, target_sample_rate=16000):
@@ -358,13 +371,13 @@ def normalize_text(text: str) -> str:
     8. Merge adjacent identical speaker tags.
     """
     # Replace [1], [2] etc. format with [S1], [S2] etc. format
-    text = re.sub(r'\[(\d+)\]', r'[S\1]', text)
+    text = re.sub(r"\[(\d+)\]", r"[S\1]", text)
 
     # Remove decorative characters
     remove_chars = "【】《》（）『』「」" '"-_“”～~'
 
     # Use positive lookahead to split text by speaker tags (tags themselves are still preserved)
-    segments = re.split(r'(?=\[S\d+\])', text.replace("\n", " "))
+    segments = re.split(r"(?=\[S\d+\])", text.replace("\n", " "))
     processed_parts = []
 
     for seg in segments:
@@ -373,58 +386,60 @@ def normalize_text(text: str) -> str:
             continue
 
         # Extract tags
-        m = re.match(r'^(\[S\d+\])\s*(.*)', seg)
-        tag, content = m.groups() if m else ('', seg)
+        m = re.match(r"^(\[S\d+\])\s*(.*)", seg)
+        tag, content = m.groups() if m else ("", seg)
 
         # Remove irrelevant symbols
         content = re.sub(f"[{re.escape(remove_chars)}]", "", content)
 
         # Handle consecutive "哈" characters: replace 2 or more with "(笑)"
-        content = re.sub(r'哈{2,}', '[笑]', content)
+        content = re.sub(r"哈{2,}", "[笑]", content)
 
         # Handle English laughter (e.g., "haha", "ha ha")
-        content = re.sub(r'\b(ha(\s*ha)+)\b', '[laugh]', content, flags=re.IGNORECASE)
+        content = re.sub(r"\b(ha(\s*ha)+)\b", "[laugh]", content, flags=re.IGNORECASE)
 
         # First handle multi-character punctuation marks
-        content = content.replace('——', '，')
-        content = content.replace('……', '，')
+        content = content.replace("——", "，")
+        content = content.replace("……", "，")
 
         # Handle single-character internal punctuation marks
-        internal_punct_map = str.maketrans({
-            '；': '，', ';': ',',
-            '：': '，', ':': ',',
-            '、': '，'
-        })
+        internal_punct_map = str.maketrans(
+            {"；": "，", ";": ",", "：": "，", ":": ",", "、": "，"}
+        )
         content = content.translate(internal_punct_map)
         content = content.strip()
 
         # Keep only the final period
         if len(content) > 1:
-            last_ch = "。" if content[-1] == "，" else ("." if content[-1] == "," else content[-1])
-            body = content[:-1].replace('。', '，')
+            last_ch = (
+                "。"
+                if content[-1] == "，"
+                else ("." if content[-1] == "," else content[-1])
+            )
+            body = content[:-1].replace("。", "，")
             content = body + last_ch
 
-        processed_parts.append({'tag': tag, 'content': content})
+        processed_parts.append({"tag": tag, "content": content})
 
     if not processed_parts:
         return ""
 
     # Merge consecutive same speakers
     merged_lines = []
-    current_tag = processed_parts[0]['tag']
-    current_content = [processed_parts[0]['content']]
+    current_tag = processed_parts[0]["tag"]
+    current_content = [processed_parts[0]["content"]]
 
     for part in processed_parts[1:]:
-        if part['tag'] == current_tag and current_tag:
-            current_content.append(part['content'])
+        if part["tag"] == current_tag and current_tag:
+            current_content.append(part["content"])
         else:
             merged_lines.append(f"{current_tag}{''.join(current_content)}".strip())
-            current_tag = part['tag']
-            current_content = [part['content']]
+            current_tag = part["tag"]
+            current_content = [part["content"]]
 
     merged_lines.append(f"{current_tag}{''.join(current_content)}".strip())
-    
-    return "".join(merged_lines).replace('‘', "'").replace('’', "'")
+
+    return "".join(merged_lines).replace("‘", "'").replace("’", "'")
 
 
 def process_batch(
@@ -578,7 +593,9 @@ def process_batch(
                         or getattr(spt, "sampling_rate", None)
                         or 24000
                     )
-                    ref_wav = load_audio_data(prompt_audio, target_sample_rate=ref_sr_in)
+                    ref_wav = load_audio_data(
+                        prompt_audio, target_sample_rate=ref_sr_in
+                    )
                     if ref_wav is None:
                         # If ref missing, use original decode
                         with torch.no_grad():
@@ -594,13 +611,19 @@ def process_batch(
                                 "index": start_idx + i,
                             }
                         )
-                        print(f"Audio generation completed (orig no-ref): sample {start_idx + i}")
+                        print(
+                            f"Audio generation completed (orig no-ref): sample {start_idx + i}"
+                        )
                     else:
                         # Encode 20s reference to tokens
-                        ref_wav_20s = pad_or_truncate_to_seconds(ref_wav, 20.0, ref_sr_in).to(device)
+                        ref_wav_20s = pad_or_truncate_to_seconds(
+                            ref_wav, 20.0, ref_sr_in
+                        ).to(device)
                         with torch.no_grad():
                             enc = spt.encode([ref_wav_20s.squeeze(0)])
-                            ref_codes = enc["codes_list"][0].to(device).long()  # (nq, T_ref)
+                            ref_codes = (
+                                enc["codes_list"][0].to(device).long()
+                            )  # (nq, T_ref)
 
                         # Prepare token-to-sample mapping and windowing params
                         out_sr = (
@@ -608,7 +631,9 @@ def process_batch(
                             or getattr(spt, "sample_rate", None)
                             or 24000
                         )
-                        tokens_per_second = float(ref_sr_in) / float(spt.encoder_downsample_rate)
+                        tokens_per_second = float(ref_sr_in) / float(
+                            spt.encoder_downsample_rate
+                        )
                         tokens_per_chunk = int(round(10.0 * tokens_per_second))
                         stride_tokens = 85
                         keep_tokens = 85
@@ -632,14 +657,22 @@ def process_batch(
                             # Concatenate reference tokens with current window tokens
                             combined_codes = torch.cat(
                                 [ref_codes, gen_chunk.permute(1, 0).long()], dim=1
-                            ).to(device)  # (nq, T_ref + T_chunk)
+                            ).to(
+                                device
+                            )  # (nq, T_ref + T_chunk)
                             codes_lengths = torch.tensor(
-                                [combined_codes.shape[-1]], dtype=torch.long, device=device
+                                [combined_codes.shape[-1]],
+                                dtype=torch.long,
+                                device=device,
                             )
-                            combined_codes_batched = combined_codes.unsqueeze(1)  # (nq, 1, T)
+                            combined_codes_batched = combined_codes.unsqueeze(
+                                1
+                            )  # (nq, 1, T)
 
                             with torch.no_grad():
-                                detok = spt.inference_detokenize(combined_codes_batched, codes_lengths)
+                                detok = spt.inference_detokenize(
+                                    combined_codes_batched, codes_lengths
+                                )
                                 y = detok["y"][0, 0]  # (T_samples)
 
                             # Remove 20s reference portion (in samples)
@@ -657,22 +690,35 @@ def process_batch(
 
                             if is_first:
                                 keep_start_tok = 0
-                                keep_end_tok = min(keep_tokens + left_ctx_tokens, window_len)
+                                keep_end_tok = min(
+                                    keep_tokens + left_ctx_tokens, window_len
+                                )
                             elif is_last and remains < 105:
-                                keep_start_tok = 0 if is_first else min(left_ctx_tokens, window_len)
+                                keep_start_tok = (
+                                    0 if is_first else min(left_ctx_tokens, window_len)
+                                )
                                 keep_end_tok = window_len
                             else:
                                 keep_start_tok = min(left_ctx_tokens, window_len)
-                                keep_end_tok = min(left_ctx_tokens + keep_tokens, window_len)
+                                keep_end_tok = min(
+                                    left_ctx_tokens + keep_tokens, window_len
+                                )
 
                             keep_start_smps = keep_start_tok * samples_per_token
                             keep_end_smps = keep_end_tok * samples_per_token
                             left_margin = 0
                             right_margin = crossfade_samples if not is_last else 0
                             seg_start = max(0, keep_start_smps - left_margin)
-                            seg_end = min(chunk_y.shape[-1], keep_end_smps + right_margin)
+                            seg_end = min(
+                                chunk_y.shape[-1], keep_end_smps + right_margin
+                            )
                             if seg_end > seg_start:
-                                kept_segments.append(chunk_y[seg_start:seg_end].detach().cpu().unsqueeze(0))
+                                kept_segments.append(
+                                    chunk_y[seg_start:seg_end]
+                                    .detach()
+                                    .cpu()
+                                    .unsqueeze(0)
+                                )
 
                             chunk_idx += 1
 
@@ -680,7 +726,11 @@ def process_batch(
                         if len(kept_segments) == 0:
                             audio_out = torch.zeros(1, int(0.01 * out_sr))
                         else:
-                            audio_out = crossfade_concat(kept_segments, out_sr, crossfade_seconds=crossfade_seconds)
+                            audio_out = crossfade_concat(
+                                kept_segments,
+                                out_sr,
+                                crossfade_seconds=crossfade_seconds,
+                            )
 
                         audio_results.append(
                             {
@@ -689,7 +739,9 @@ def process_batch(
                                 "index": start_idx + i,
                             }
                         )
-                        print(f"Audio generation completed (prompt-aug): sample {start_idx + i}")
+                        print(
+                            f"Audio generation completed (prompt-aug): sample {start_idx + i}"
+                        )
 
             except Exception as e:
                 print(f"Error processing sample {start_idx + i}: {str(e)}, skipping...")

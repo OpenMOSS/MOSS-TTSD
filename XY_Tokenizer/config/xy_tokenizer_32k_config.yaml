@@ -62,7 +62,7 @@ generator_params:
         activation_function: "gelu"
 
 
-    ## semantic & acoustic shared parameters 
+    ## semantic & acoustic shared parameters
     pre_rvq_adapter_kwargs: # 50hz
         input_dim: 1536
         output_dim: 768
@@ -71,7 +71,7 @@ generator_params:
         encoder_layers: 4
         encoder_attention_heads: 12
         encoder_ffn_dim: 3072
-        
+
     downsample_kwargs:  # 50hz -> 12.5hz
         d_model: 768
         avg_pooler: 4
@@ -85,7 +85,7 @@ generator_params:
         codebook_dim: 512
         quantizer_dropout: 0.0
         commitment: 1
-    
+
     post_rvq_adapter_kwargs: # 12.5hz
         input_dim: 3072
         output_dim: 3072
@@ -98,7 +98,7 @@ generator_params:
     upsample_kwargs:  # 12.5hz -> 50hz
         d_model: 768
         stride: 4
-    
+
     ## acoustic channel
     acoustic_decoder_kwargs:  # 50hz -> 100hz
         num_mel_bins: 80
@@ -113,7 +113,7 @@ generator_params:
         decoder_attention_heads: 12
         decoder_ffn_dim: 3072
         activation_function: "gelu"
-    
+
     vocos_kwargs:  # 100hz -> 32khz
         input_channels: 80
         dim: 512
