@@ -1,13 +1,15 @@
+import argparse
 import os
+import re
+
+import openai
+import requests
 import torch
 import torchaudio
-import requests
 from bs4 import BeautifulSoup
-import re
 from PyPDF2 import PdfReader
-import openai
+
 from generation_utils import load_model, process_batch
-import argparse
 
 # =============== Configuration Section ===============
 SYSTEM_PROMPT = "You are a speech synthesizer that generates natural, realistic, and human-like conversational audio from dialogue text."
@@ -19,7 +21,7 @@ MAX_CHANNELS = 8
 # English audio examples
 EN_PROMPT_AUDIO_SPEAKER1 = "examples/m1.wav"
 EN_PROMPT_TEXT_SPEAKER1 = "How much do you know about her?"
-EN_PROMPT_AUDIO_SPEAKER2 = "examples/m2.wav"  
+EN_PROMPT_AUDIO_SPEAKER2 = "examples/m2.wav"
 EN_PROMPT_TEXT_SPEAKER2 = "Well, we know this much about her. You've been with her constantly since the first day you met her. And we followed you while you went dining, dancing, and sailing. And last night, I happened to be there when you were having dinner with her at Le Petit Tableau."
 
 # Chinese audio examples
@@ -32,12 +34,13 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 
 # =============== Text Parsing Functions ===============
 
+
 def extract_text_from_pdf(file_path):
     """Extract text content from PDF file
-    
+
     Args:
         file_path (str): PDF file path
-        
+
     Returns:
         str: Extracted text content, returns None if failed
     """
@@ -54,81 +57,83 @@ def extract_text_from_pdf(file_path):
 
 def extract_web_content(url):
     """Extract title and main content from web URL
-    
+
     Args:
         url (str): Web URL address
-        
+
     Returns:
         tuple: (title, content) - title and main content, returns None if failed
     """
     try:
         # Send request and get web content
         headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
         }
         response = requests.get(url, headers=headers, timeout=10)
-        response.encoding = 'utf-8'  # Ensure correct encoding
+        response.encoding = "utf-8"  # Ensure correct encoding
         response.raise_for_status()
-        
+
         print(f"HTTP status: {response.status_code}")
         print(f"Response content length: {len(response.text)}")
 
         # Parse HTML content
-        soup = BeautifulSoup(response.text, 'html.parser')
+        soup = BeautifulSoup(response.text, "html.parser")
 
         # Extract title - try multiple approaches
         title = ""
-        
+
         # Try h1 tags first
-        h1_tags = soup.find_all('h1')
+        h1_tags = soup.find_all("h1")
         if h1_tags:
             for h1 in h1_tags:
                 if h1.text.strip():
                     title = h1.text.strip()
                     break
-        
+
         # Try title tag if h1 not found
         if not title and soup.title:
             title = soup.title.string.strip() if soup.title.string else ""
-        
+
         # Try meta property="og:title"
         if not title:
-            og_title = soup.find('meta', property='og:title')
-            if og_title and og_title.get('content'):
-                title = og_title['content'].strip()
+            og_title = soup.find("meta", property="og:title")
+            if og_title and og_title.get("content"):
+                title = og_title["content"].strip()
 
         print(f"Extracted title: {title}")
 
         # Simply extract all text from the page
         # Remove script, style, and other non-content elements
-        for unwanted in soup.find_all(['script', 'style', 'noscript']):
+        for unwanted in soup.find_all(["script", "style", "noscript"]):
             unwanted.decompose()
-            
+
         # Get all text content
-        text_content = soup.get_text(separator='\n', strip=True)
-        
+        text_content = soup.get_text(separator="\n", strip=True)
+
         # Clean the text
         if text_content:
             # Remove extra blank lines
-            cleaned_text = re.sub(r'\n{3,}', '\n\n', text_content)
+            cleaned_text = re.sub(r"\n{3,}", "\n\n", text_content)
             # Remove extra spaces
-            cleaned_text = re.sub(r' {2,}', ' ', cleaned_text)
+            cleaned_text = re.sub(r" {2,}", " ", cleaned_text)
             # Remove very short lines and common noise
-            lines = cleaned_text.split('\n')
+            lines = cleaned_text.split("\n")
             filtered_lines = []
             for line in lines:
                 line = line.strip()
                 # Filter out very short lines and common non-content patterns
-                if (len(line) > 3 and 
-                    'browser does not support' not in line.lower() and
-                    not re.match(r'^[0-9\s\-\/\.]+$', line)):  # Filter date-only lines
+                if (
+                    len(line) > 3
+                    and "browser does not support" not in line.lower()
+                    and not re.match(r"^[0-9\s\-\/\.]+$", line)
+                ):  # Filter date-only lines
                     filtered_lines.append(line)
-            
-            cleaned_text = '\n'.join(filtered_lines)
-            
+
+            cleaned_text = "\n".join(filtered_lines)
+
             print(f"Final content length: {len(cleaned_text)} characters")
             print(f"Content preview: {cleaned_text[:300]}...")
-            
+
             return title, cleaned_text
         else:
             print("No content extracted")
@@ -140,25 +145,26 @@ def extract_web_content(url):
     except Exception as e:
         print(f"Parse error: {e}")
         import traceback
+
         traceback.print_exc()
         return None
 
 
 def extract_text_from_txt(file_path):
     """Extract text content from TXT file
-    
+
     Args:
         file_path (str): TXT file path
-        
+
     Returns:
         str: Extracted text content, returns None if failed
     """
     try:
-        with open(file_path, 'r', encoding='utf-8') as f:
+        with open(file_path, "r", encoding="utf-8") as f:
             return f.read()
     except UnicodeDecodeError:
         try:
-            with open(file_path, 'r', encoding='gbk') as f:
+            with open(file_path, "r", encoding="gbk") as f:
                 return f.read()
         except Exception as e:
             print(f"TXT file reading failed (tried GBK encoding): {str(e)}")
@@ -170,17 +176,17 @@ def extract_text_from_txt(file_path):
 
 def parse_input_content(input_path):
     """Parse input content, supports URL, PDF or TXT files
-    
+
     Args:
         input_path (str): URL address, PDF file path or TXT file path
-        
+
     Returns:
         str: Parsed text content
     """
     print(f"Parsing input: {input_path}")
-    
+
     # Check if it's a URL
-    if input_path.startswith(('http://', 'https://')):
+    if input_path.startswith(("http://", "https://")):
         print("URL detected, extracting web content...")
         result = extract_web_content(input_path)
         if result:
@@ -191,9 +197,9 @@ def parse_input_content(input_path):
         else:
             print("Web content extraction failed")
             return None
-    
+
     # Check if it's a PDF file
-    elif input_path.lower().endswith('.pdf'):
+    elif input_path.lower().endswith(".pdf"):
         print("PDF file detected, extracting content...")
         content = extract_text_from_pdf(input_path)
         if content:
@@ -202,9 +208,9 @@ def parse_input_content(input_path):
         else:
             print("PDF content extraction failed")
             return None
-    
+
     # Check if it's a TXT file
-    elif input_path.lower().endswith('.txt'):
+    elif input_path.lower().endswith(".txt"):
         print("TXT file detected, reading content...")
         content = extract_text_from_txt(input_path)
         if content:
@@ -213,7 +219,7 @@ def parse_input_content(input_path):
         else:
             print("TXT file reading failed")
             return None
-    
+
     else:
         print(f"Unsupported input format: {input_path}")
         return None
@@ -221,7 +227,8 @@ def parse_input_content(input_path):
 
 # =============== Dialogue Script Generation Function ===============
 
-def generate_podcast_script(content, language='zh'):
+
+def generate_podcast_script(content, language="zh"):
     """Call large model to generate podcast dialogue script"""
     from openai import OpenAI
 
@@ -230,7 +237,7 @@ def generate_podcast_script(content, language='zh'):
         base_url=os.getenv("OPENAI_API_BASE", "YOUR_API_BASE_URL"),
     )
 
-    if language == 'zh':
+    if language == "zh":
         role_play = "两位中文播客主持人"
         instruction = f"""你是一位专业的中文播客文字脚本撰稿人。现在请你根据提供的有关最新AI及大模型相关进展的原始资料，生成一段模拟{role_play}之间的自然对话脚本。该脚本应符合以下具体要求：
     一、语言风格
@@ -270,7 +277,7 @@ def generate_podcast_script(content, language='zh'):
     请根据以上要求和提供的原始资料，将其转化为符合以上所有要求的播客对话脚本。一定要用[S1]和[S2]标记两位说话人，绝对不能使用任何其它符号标记说话人。
     注意：直接输出结果，不要包含任何额外信息。
     """
-    else: # Default to English
+    else:  # Default to English
         role_play = "two English podcast hosts"
         instruction = f"""You are a professional English podcast scriptwriter. Based on the provided source material about the latest developments in AI and large models, generate a natural conversational script simulating a dialogue between {role_play}. The script should meet the following specific requirements:
     I. Language Style
@@ -314,23 +321,18 @@ def generate_podcast_script(content, language='zh'):
     try:
         print("Calling large model to generate dialogue script...")
         print(f"Input content length: {len(content)} characters")
-        
+
         completion = client.chat.completions.create(
             model="gemini-2.5-pro",
             # model="gemini-2.5-flash-preview-04-17",
-            messages=[
-                {
-                    "role": "user",
-                    "content": instruction
-                }
-            ]
+            messages=[{"role": "user", "content": instruction}],
         )
-        
+
         raw_result = completion.choices[0].message.content
-        
+
         # Remove all newlines
-        processed_result = raw_result.replace('\n', '').replace('\r', '')
-        
+        processed_result = raw_result.replace("\n", "").replace("\r", "")
+
         print("=" * 50)
         print("Large model generated dialogue script (original version):")
         print("=" * 50)
@@ -342,9 +344,9 @@ def generate_podcast_script(content, language='zh'):
         print("=" * 50)
         print(f"Original script length: {len(raw_result)} characters")
         print(f"Processed script length: {len(processed_result)} characters")
-        
+
         return processed_result
-        
+
     except Exception as e:
         print(f"Large model call failed: {str(e)}")
         # If large model call fails, return a sample script for testing
@@ -355,17 +357,20 @@ def generate_podcast_script(content, language='zh'):
 
 # =============== Main Function ===============
 
-def process_input_to_audio(input_path: str, output_dir: str = "examples", language: str = 'zh'):
+
+def process_input_to_audio(
+    input_path: str, output_dir: str = "examples", language: str = "zh"
+):
     """Complete processing pipeline: from input to audio output
-    
+
     Args:
         input_path (str): Input path (URL, PDF or TXT file)
         output_dir (str): Output directory
         language (str): Language for the podcast script ('en' or 'zh')
     """
-    
+
     # Select prompts based on language
-    if language == 'zh':
+    if language == "zh":
         prompt_audio_speaker1 = ZH_PROMPT_AUDIO_SPEAKER1
         prompt_text_speaker1 = ZH_PROMPT_TEXT_SPEAKER1
         prompt_audio_speaker2 = ZH_PROMPT_AUDIO_SPEAKER2
@@ -375,20 +380,20 @@ def process_input_to_audio(input_path: str, output_dir: str = "examples", langua
         prompt_text_speaker1 = EN_PROMPT_TEXT_SPEAKER1
         prompt_audio_speaker2 = EN_PROMPT_AUDIO_SPEAKER2
         prompt_text_speaker2 = EN_PROMPT_TEXT_SPEAKER2
-    
+
     print(f"Using {language} prompts:")
     print(f"Speaker 1: {prompt_audio_speaker1}")
     print(f"Speaker 2: {prompt_audio_speaker2}")
-    
+
     # 1. Parse input content
     print("Step 1: Parse input content")
     content = parse_input_content(input_path)
     if not content:
         print("Unable to parse input content, program terminated")
         return
-    
+
     print(f"Content parsed successfully, content preview: {content[:200]}...")
-    
+
     # 2. Use large model to generate dialogue script
     print("\nStep 2: Generate dialogue script")
     script = generate_podcast_script(content, language=language)
@@ -402,22 +407,24 @@ def process_input_to_audio(input_path: str, output_dir: str = "examples", langua
     spt = spt.to(device)
     model = model.to(device)
     print("TTS model loading completed")
-    
+
     # 4. Prepare TTS input data with language-specific prompts
     print("\nStep 4: Prepare TTS input data")
-    items = [{
-        "text": script,
-        "base_path": "",
-        "prompt_audio_speaker1": prompt_audio_speaker1,
-        "prompt_text_speaker1": prompt_text_speaker1,
-        "prompt_audio_speaker2": prompt_audio_speaker2,
-        "prompt_text_speaker2": prompt_text_speaker2
-    }]
-    
+    items = [
+        {
+            "text": script,
+            "base_path": "",
+            "prompt_audio_speaker1": prompt_audio_speaker1,
+            "prompt_text_speaker1": prompt_text_speaker1,
+            "prompt_audio_speaker2": prompt_audio_speaker2,
+            "prompt_text_speaker2": prompt_text_speaker2,
+        }
+    ]
+
     # 5. Set random seed
     # import accelerate
     # accelerate.utils.set_seed(42)
-    
+
     # 6. Generate audio
     print("\nStep 5: Generate audio")
     actual_texts_data, audio_results = process_batch(
@@ -428,21 +435,23 @@ def process_input_to_audio(input_path: str, output_dir: str = "examples", langua
         device=device,
         system_prompt=SYSTEM_PROMPT,
         start_idx=0,
-        use_normalize=True
+        use_normalize=True,
     )
-    
+
     # 7. Save audio files
     print("\nStep 6: Save audio files")
     os.makedirs(output_dir, exist_ok=True)
-    
+
     for idx, audio_result in enumerate(audio_results):
         if audio_result is not None:
             output_path = os.path.join(output_dir, f"generated_podcast_{idx}.wav")
-            torchaudio.save(output_path, audio_result["audio_data"], audio_result["sample_rate"])
+            torchaudio.save(
+                output_path, audio_result["audio_data"], audio_result["sample_rate"]
+            )
             print(f"Audio saved to: {output_path}")
         else:
             print(f"Audio generation failed: sample {idx}")
-    
+
     print("\nProcessing completed!")
 
 
@@ -450,16 +459,28 @@ def process_input_to_audio(input_path: str, output_dir: str = "examples", langua
 
 if __name__ == "__main__":
     # Add command line argument parsing
-    parser = argparse.ArgumentParser(description="Generate podcast audio: supports URL, PDF or TXT file input")
-    parser.add_argument("input_path", help="Input path: URL address, PDF file path or TXT file path")
-    parser.add_argument("-o", "--output", default="outputs", help="Output directory (default: outputs)")
-    parser.add_argument("-l", "--language", default="zh", choices=['en', 'zh'], help="Language of the podcast script (en or zh, default: zh)")
-    
+    parser = argparse.ArgumentParser(
+        description="Generate podcast audio: supports URL, PDF or TXT file input"
+    )
+    parser.add_argument(
+        "input_path", help="Input path: URL address, PDF file path or TXT file path"
+    )
+    parser.add_argument(
+        "-o", "--output", default="outputs", help="Output directory (default: outputs)"
+    )
+    parser.add_argument(
+        "-l",
+        "--language",
+        default="zh",
+        choices=["en", "zh"],
+        help="Language of the podcast script (en or zh, default: zh)",
+    )
+
     args = parser.parse_args()
-    
+
     # Use command line arguments
     print(f"Input path: {args.input_path}")
     print(f"Output directory: {args.output}")
     print(f"Script language: {args.language}")
-    
+
     process_input_to_audio(args.input_path, args.output, args.language)

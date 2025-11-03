@@ -1,0 +1,114 @@
+generator_params:
+  input_sample_rate: 16000
+  output_sample_rate: 32000
+  encoder_downsample_rate: 1280
+  decoder_upsample_rate: 2560
+
+  feature_extractor_kwargs:
+    chunk_length: 30
+    feature_size: 80
+    hop_length: 160
+    n_fft: 400
+    n_samples: 480000
+    nb_max_frames: 3000
+    padding_side: right
+    padding_value: 0.0
+    return_attention_mask: false
+    sampling_rate: 16000
+
+  # Codec / model architecture (inference required)
+  semantic_encoder_kwargs:  # 100hz -> 50hz
+    num_mel_bins: 80
+    sampling_rate: 16000
+    hop_length: 160
+    stride_size: 2
+    kernel_size: 3
+    d_model: 768
+    scale_embedding: false
+    max_audio_seconds: 30
+    encoder_layers: 12
+    encoder_attention_heads: 12
+    encoder_ffn_dim: 3072
+    activation_function: "gelu"
+
+  semantic_encoder_adapter_kwargs: # 50hz
+    input_dim: 768
+    output_dim: 768
+    d_model: 768
+    max_source_positions: 1500
+    encoder_layers: 4
+    encoder_attention_heads: 12
+    encoder_ffn_dim: 3072
+
+  acoustic_encoder_kwargs:  # 100hz -> 50hz
+    num_mel_bins: 80
+    sampling_rate: 16000
+    hop_length: 160
+    stride_size: 2
+    kernel_size: 3
+    d_model: 768
+    scale_embedding: false
+    max_audio_seconds: 30
+    encoder_layers: 12
+    encoder_attention_heads: 12
+    encoder_ffn_dim: 3072
+    activation_function: "gelu"
+
+  pre_rvq_adapter_kwargs: # 50hz
+    input_dim: 1536
+    output_dim: 768
+    d_model: 768
+    max_source_positions: 1500
+    encoder_layers: 4
+    encoder_attention_heads: 12
+    encoder_ffn_dim: 3072
+
+  downsample_kwargs:  # 50hz -> 12.5hz
+    d_model: 768
+    avg_pooler: 4
+
+  quantizer_kwargs:  # 12.5hz
+    input_dim: 3072
+    rvq_dim: 512
+    output_dim: 3072
+    num_quantizers: 8
+    codebook_size: 1024
+    codebook_dim: 512
+    quantizer_dropout: 0.0
+    commitment: 1
+
+  post_rvq_adapter_kwargs: # 12.5hz
+    input_dim: 3072
+    output_dim: 3072
+    d_model: 768
+    max_source_positions: 375
+    encoder_layers: 4
+    encoder_attention_heads: 12
+    encoder_ffn_dim: 3072
+
+  upsample_kwargs:  # 12.5hz -> 50hz
+    d_model: 768
+    stride: 4
+
+  acoustic_decoder_kwargs:  # 50hz -> 100hz
+    num_mel_bins: 80
+    sampling_rate: 16000
+    hop_length: 160
+    stride_size: 2
+    kernel_size: 3
+    d_model: 768
+    scale_embedding: false
+    max_audio_seconds: 30
+    decoder_layers: 12
+    decoder_attention_heads: 12
+    decoder_ffn_dim: 3072
+    activation_function: "gelu"
+
+  vocos_kwargs:  # 100hz -> 32khz
+    input_channels: 80
+    dim: 512
+    intermediate_dim: 4096
+    num_layers: 30
+    n_fft: 1280
+    hop_size: 320
+    padding: "same"

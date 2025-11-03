@@ -8,6 +8,77 @@ import torchaudio
 MAX_CHANNELS = 8
 
 
+def pad_or_truncate_to_seconds(
+    wav: torch.Tensor, target_seconds: float, sr: int
+) -> torch.Tensor:
+    """Pad or truncate a mono waveform to target length in seconds.
+
+    Args:
+        wav: (1, T) or (T,) tensor
+        target_seconds: target duration in seconds
+        sr: sample rate
+    Returns:
+        (1, T_target) tensor
+    """
+    if wav.dim() == 2 and wav.shape[0] == 1:
+        wav_1d = wav.squeeze(0)
+    else:
+        wav_1d = wav.reshape(-1)
+    target_len = int(round(target_seconds * sr))
+    cur_len = wav_1d.shape[-1]
+    if cur_len == target_len:
+        out = wav_1d
+    elif cur_len > target_len:
+        out = wav_1d[:target_len]
+    else:
+        pad_len = target_len - cur_len
+        out = torch.cat(
+            [wav_1d, torch.zeros(pad_len, dtype=wav_1d.dtype, device=wav_1d.device)],
+            dim=-1,
+        )
+    return out.unsqueeze(0)
+
+
+def crossfade_concat(
+    segments: list, sample_rate: int, crossfade_seconds: float = 0.1
+) -> torch.Tensor:
+    """Concatenate segments with linear crossfade.
+
+    Args:
+        segments: list of (1, T) tensors
+        sample_rate: sampling rate
+        crossfade_seconds: overlap time for crossfade
+    Returns:
+        (1, T_total) tensor
+    """
+    if len(segments) == 0:
+        return torch.zeros(1, 0)
+    if len(segments) == 1:
+        return segments[0]
+    out = segments[0]
+    cf_len_target = int(round(crossfade_seconds * sample_rate))
+    for k in range(1, len(segments)):
+        nxt = segments[k]
+        if cf_len_target <= 0:
+            out = torch.cat([out, nxt], dim=-1)
+            continue
+        cf_len = min(cf_len_target, out.shape[-1], nxt.shape[-1])
+        if cf_len <= 0:
+            out = torch.cat([out, nxt], dim=-1)
+            continue
+        fade_out = torch.linspace(
+            1.0, 0.0, steps=cf_len, dtype=out.dtype, device=out.device
+        )
+        fade_in = torch.linspace(
+            0.0, 1.0, steps=cf_len, dtype=nxt.dtype, device=nxt.device
+        )
+        overlap = out[0, -cf_len:] * fade_out + nxt[0, :cf_len] * fade_in
+        out = torch.cat(
+            [out[:, :-cf_len], overlap.unsqueeze(0), nxt[:, cf_len:]], dim=-1
+        )
+    return out
+
+
 def load_model(
     model_path,
     spt_config_path,
@@ -34,71 +105,74 @@ def load_model(
 
 
 def process_jsonl_item(item):
-    """Process JSONL data items and extract audio and text information according to the new format"""
-    base_path = item.get("base_path", "")
+    """Parse a JSONL item enforcing prompt requirement.
+
+    Only supports Format 1 (separate speaker refs) and Format 2 (shared ref),
+    consistent with the updated README. If `base_path` is missing/empty, any
+    string paths must be absolute. Text-only input is not supported and will raise.
+    """
+    base_path = item.get("base_path", "") or ""
     text = item.get("text", "")
 
+    def _resolve_path(p: str) -> str:
+        if not isinstance(p, str) or not p:
+            return p
+        if base_path:
+            return os.path.join(base_path, p)
+        # base_path missing: require absolute path
+        if not os.path.isabs(p):
+            raise ValueError(
+                "When base_path is omitted, audio paths must be absolute. Got: " + p
+            )
+        return p
+
+    # Try Format 2 first: shared audio reference
     prompt_audio = None
     prompt_text = ""
-
-    # Process prompt audio and text
-    if "prompt_audio" in item and "prompt_text" in item:
-        print("Using prompt_audio and prompt_text directly from item.")
-        # If prompt_audio and prompt_text exist, use them directly
-        prompt_audio_val = item["prompt_audio"]
-        if prompt_audio_val:  # Only assign if not empty
+    if "prompt_audio" in item:
+        prompt_audio_val = item.get("prompt_audio")
+        if not prompt_audio_val:
+            raise ValueError("Format 2 requires non-empty 'prompt_audio'.")
+        if isinstance(prompt_audio_val, str):
+            prompt_audio = _resolve_path(prompt_audio_val)
+        else:
+            # allow tuple form for backward-compatibility
             prompt_audio = prompt_audio_val
-            prompt_text = item["prompt_text"]
+        prompt_text = item.get("prompt_text", "")
+        return {"text": text, "prompt_text": prompt_text, "prompt_audio": prompt_audio}
 
-            # Only perform path joining when prompt_audio is a string path
-            if isinstance(prompt_audio, str) and base_path and prompt_audio:
-                prompt_audio = os.path.join(base_path, prompt_audio)
-    else:
-        # Otherwise, merge speaker1 and speaker2 information
-        prompt_audio_speaker1 = item.get("prompt_audio_speaker1", "")
-        prompt_text_speaker1 = item.get("prompt_text_speaker1", "")
-        prompt_audio_speaker2 = item.get("prompt_audio_speaker2", "")
-        prompt_text_speaker2 = item.get("prompt_text_speaker2", "")
+    # Try Format 1: separate speaker references
+    s1 = item.get("prompt_audio_speaker1", "")
+    s2 = item.get("prompt_audio_speaker2", "")
+    has_s1 = (isinstance(s1, str) and s1) or isinstance(s1, tuple)
+    has_s2 = (isinstance(s2, str) and s2) or isinstance(s2, tuple)
 
-        has_speaker1_audio = (
-            isinstance(prompt_audio_speaker1, str) and prompt_audio_speaker1
-        ) or isinstance(prompt_audio_speaker1, tuple)
-        has_speaker2_audio = (
-            isinstance(prompt_audio_speaker2, str) and prompt_audio_speaker2
-        ) or isinstance(prompt_audio_speaker2, tuple)
+    if has_s1 and has_s2:
+        if isinstance(s1, str) and s1:
+            s1_resolved = _resolve_path(s1)
+        else:
+            s1_resolved = s1
+        if isinstance(s2, str) and s2:
+            s2_resolved = _resolve_path(s2)
+        else:
+            s2_resolved = s2
+        # Build merged prompt audio dict
+        prompt_audio = {"speaker1": s1_resolved, "speaker2": s2_resolved}
+        # Merge texts
+        pt1 = item.get("prompt_text_speaker1", "")
+        pt2 = item.get("prompt_text_speaker2", "")
+        merged = ""
+        if pt1:
+            merged += f"[S1]{pt1}"
+        if pt2:
+            merged += f"[S2]{pt2}"
+        prompt_text = merged.strip()
+        return {"text": text, "prompt_text": prompt_text, "prompt_audio": prompt_audio}
 
-        if has_speaker1_audio or has_speaker2_audio:
-            print("Using speaker1 and speaker2 information for prompt audio and text.")
-            # Process audio: if it's a string path, perform path joining; if it's a tuple, use directly
-            if isinstance(prompt_audio_speaker1, str):
-                speaker1_audio = (
-                    os.path.join(base_path, prompt_audio_speaker1)
-                    if base_path and prompt_audio_speaker1
-                    else prompt_audio_speaker1
-                )
-            else:
-                speaker1_audio = prompt_audio_speaker1  # Use tuple directly
-
-            if isinstance(prompt_audio_speaker2, str):
-                speaker2_audio = (
-                    os.path.join(base_path, prompt_audio_speaker2)
-                    if base_path and prompt_audio_speaker2
-                    else prompt_audio_speaker2
-                )
-            else:
-                speaker2_audio = prompt_audio_speaker2  # Use tuple directly
-
-            prompt_audio = {"speaker1": speaker1_audio, "speaker2": speaker2_audio}
-
-        # Merge text
-        temp_prompt_text = ""
-        if prompt_text_speaker1:
-            temp_prompt_text += f"[S1]{prompt_text_speaker1}"
-        if prompt_text_speaker2:
-            temp_prompt_text += f"[S2]{prompt_text_speaker2}"
-        prompt_text = temp_prompt_text.strip()
-
-    return {"text": text, "prompt_text": prompt_text, "prompt_audio": prompt_audio}
+    # Otherwise, no supported prompt found → reject (text-only unsupported)
+    raise ValueError(
+        "Input must include prompt (Format 1 or 2). Text-only is not supported."
+    )
 
 
 def load_audio_data(prompt_audio, target_sample_rate=16000):
@@ -288,9 +362,9 @@ def normalize_text(text: str) -> str:
     Normalize multi-speaker script.
 
     1. Don't preserve line breaks.
-    2. Remove brackets for non-speaker tags (if [] doesn't contain S1/S2...Sx format, remove the brackets themselves).
-    3. Remove decorative symbols: 【】《》（）『』「」"-“” .
-    4. Internal punctuation ！；：、 → ，；only allow ？ and ，。
+    2. Preserve bracketed segments like [] () <> even when they are not speaker tags.
+    3. Remove decorative symbols: 【】《》（）『』「」～~-_.
+    4. Internal punctuation ；：、 → ，；keep ？！?.
     5. Multiple 。 keep only the last one, others → ，。
     6. Replace consecutive "哈" (>=2) with "(笑)".
     7. Auto-recognize [S1] / [S2] … tags; if missing, treat as whole segment.
@@ -301,9 +375,6 @@ def normalize_text(text: str) -> str:
 
     # Remove decorative characters
     remove_chars = "【】《》（）『』「」" '"-_“”～~'
-
-    # Remove brackets for non-speaker tags (keep content, only remove brackets themselves)
-    text = re.sub(r"\[(?!S\d+\])([^\]]*)\]", r"\1", text)
 
     # Use positive lookahead to split text by speaker tags (tags themselves are still preserved)
     segments = re.split(r"(?=\[S\d+\])", text.replace("\n", " "))
@@ -322,10 +393,10 @@ def normalize_text(text: str) -> str:
         content = re.sub(f"[{re.escape(remove_chars)}]", "", content)
 
         # Handle consecutive "哈" characters: replace 2 or more with "(笑)"
-        content = re.sub(r"哈{2,}", "(笑)", content)
+        content = re.sub(r"哈{2,}", "[笑]", content)
 
         # Handle English laughter (e.g., "haha", "ha ha")
-        content = re.sub(r"\b(ha(\s*ha)+)\b", "(laughs)", content, flags=re.IGNORECASE)
+        content = re.sub(r"\b(ha(\s*ha)+)\b", "[laugh]", content, flags=re.IGNORECASE)
 
         # First handle multi-character punctuation marks
         content = content.replace("——", "，")
@@ -333,17 +404,7 @@ def normalize_text(text: str) -> str:
 
         # Handle single-character internal punctuation marks
         internal_punct_map = str.maketrans(
-            {
-                "！": "，",
-                "!": ",",
-                "；": "，",
-                ";": ",",
-                "：": "，",
-                ":": ",",
-                "、": "，",
-                "？": "，",
-                "?": ",",
-            }
+            {"；": "，", ";": ",", "：": "，", ":": ",", "、": "，"}
         )
         content = content.translate(internal_punct_map)
         content = content.strip()
@@ -507,28 +568,180 @@ def process_batch(
                     f"Speech token shape for sample {start_idx + i}: {this_speech_id.shape}"
                 )
 
-                # Decode generated audio
-                with torch.no_grad():
-                    codes_list = [
-                        this_speech_id.permute(1, 0)
-                    ]  # Convert to SPT expected format
-                    decode_result = spt.decode(codes_list, overlap_seconds=10)
-                    audio_result = decode_result["syn_wav_list"][0].cpu().detach()
+                # Prompt-Augmented Decode (rvq8-style); fall back to original decode if no prompt
+                prompt_audio = prompt_audios[i]
+                if prompt_audio is None:
+                    # Fallback to original decode
+                    with torch.no_grad():
+                        codes_list = [this_speech_id.permute(1, 0)]
+                        decode_result = spt.decode(codes_list, overlap_seconds=10)
+                        audio_out = decode_result["syn_wav_list"][0].cpu().detach()
+                        if audio_out.ndim == 1:
+                            audio_out = audio_out.unsqueeze(0)
+                    audio_results.append(
+                        {
+                            "audio_data": audio_out,
+                            "sample_rate": spt.output_sample_rate,
+                            "index": start_idx + i,
+                        }
+                    )
+                    print(f"Audio generation completed (orig): sample {start_idx + i}")
+                else:
+                    # 1) Load prompt at SPT input sr and force to 20s
+                    ref_sr_in = (
+                        getattr(spt, "input_sample_rate", None)
+                        or getattr(spt, "sampling_rate", None)
+                        or 24000
+                    )
+                    ref_wav = load_audio_data(
+                        prompt_audio, target_sample_rate=ref_sr_in
+                    )
+                    if ref_wav is None:
+                        # If ref missing, use original decode
+                        with torch.no_grad():
+                            codes_list = [this_speech_id.permute(1, 0)]
+                            decode_result = spt.decode(codes_list, overlap_seconds=10)
+                            audio_out = decode_result["syn_wav_list"][0].cpu().detach()
+                            if audio_out.ndim == 1:
+                                audio_out = audio_out.unsqueeze(0)
+                        audio_results.append(
+                            {
+                                "audio_data": audio_out,
+                                "sample_rate": spt.output_sample_rate,
+                                "index": start_idx + i,
+                            }
+                        )
+                        print(
+                            f"Audio generation completed (orig no-ref): sample {start_idx + i}"
+                        )
+                    else:
+                        # Encode 20s reference to tokens
+                        ref_wav_20s = pad_or_truncate_to_seconds(
+                            ref_wav, 20.0, ref_sr_in
+                        ).to(device)
+                        with torch.no_grad():
+                            enc = spt.encode([ref_wav_20s.squeeze(0)])
+                            ref_codes = (
+                                enc["codes_list"][0].to(device).long()
+                            )  # (nq, T_ref)
 
-                    if audio_result.ndim == 1:  # If 1D [samples]
-                        audio_result = audio_result.unsqueeze(
-                            0
-                        )  # Convert to 2D [1, samples]
+                        # Prepare token-to-sample mapping and windowing params
+                        out_sr = (
+                            getattr(spt, "output_sample_rate", None)
+                            or getattr(spt, "sample_rate", None)
+                            or 24000
+                        )
+                        tokens_per_second = float(ref_sr_in) / float(
+                            spt.encoder_downsample_rate
+                        )
+                        tokens_per_chunk = int(round(10.0 * tokens_per_second))
+                        stride_tokens = 85
+                        keep_tokens = 85
+                        left_ctx_tokens = 20
+                        total_tokens = this_speech_id.shape[0]
+                        samples_per_token = int(round(out_sr / tokens_per_second))
+                        crossfade_seconds = 0.1
+                        crossfade_samples = int(round(crossfade_seconds * out_sr))
 
-                # Save audio data instead of file path
-                audio_results.append(
-                    {
-                        "audio_data": audio_result,
-                        "sample_rate": spt.output_sample_rate,
-                        "index": start_idx + i,
-                    }
-                )
-                print(f"Audio generation completed: sample {start_idx + i}")
+                        kept_segments = []
+                        chunk_idx = 0
+                        while True:
+                            st_tok = chunk_idx * stride_tokens
+                            if st_tok >= total_tokens:
+                                break
+                            ed_tok = min(st_tok + tokens_per_chunk, total_tokens)
+                            gen_chunk = this_speech_id[st_tok:ed_tok]  # (len, C)
+                            if gen_chunk.shape[0] == 0:
+                                break
+
+                            # Concatenate reference tokens with current window tokens
+                            combined_codes = torch.cat(
+                                [ref_codes, gen_chunk.permute(1, 0).long()], dim=1
+                            ).to(
+                                device
+                            )  # (nq, T_ref + T_chunk)
+                            codes_lengths = torch.tensor(
+                                [combined_codes.shape[-1]],
+                                dtype=torch.long,
+                                device=device,
+                            )
+                            combined_codes_batched = combined_codes.unsqueeze(
+                                1
+                            )  # (nq, 1, T)
+
+                            with torch.no_grad():
+                                detok = spt.inference_detokenize(
+                                    combined_codes_batched, codes_lengths
+                                )
+                                y = detok["y"][0, 0]  # (T_samples)
+
+                            # Remove 20s reference portion (in samples)
+                            ref_samples = int(round(20.0 * out_sr))
+                            if y.shape[-1] <= ref_samples:
+                                chunk_idx += 1
+                                continue
+                            chunk_y = y[ref_samples:]
+
+                            # Determine kept region within current window
+                            window_len = gen_chunk.shape[0]
+                            remains = total_tokens - st_tok
+                            is_first = chunk_idx == 0
+                            is_last = ed_tok >= total_tokens
+
+                            if is_first:
+                                keep_start_tok = 0
+                                keep_end_tok = min(
+                                    keep_tokens + left_ctx_tokens, window_len
+                                )
+                            elif is_last and remains < 105:
+                                keep_start_tok = (
+                                    0 if is_first else min(left_ctx_tokens, window_len)
+                                )
+                                keep_end_tok = window_len
+                            else:
+                                keep_start_tok = min(left_ctx_tokens, window_len)
+                                keep_end_tok = min(
+                                    left_ctx_tokens + keep_tokens, window_len
+                                )
+
+                            keep_start_smps = keep_start_tok * samples_per_token
+                            keep_end_smps = keep_end_tok * samples_per_token
+                            left_margin = 0
+                            right_margin = crossfade_samples if not is_last else 0
+                            seg_start = max(0, keep_start_smps - left_margin)
+                            seg_end = min(
+                                chunk_y.shape[-1], keep_end_smps + right_margin
+                            )
+                            if seg_end > seg_start:
+                                kept_segments.append(
+                                    chunk_y[seg_start:seg_end]
+                                    .detach()
+                                    .cpu()
+                                    .unsqueeze(0)
+                                )
+
+                            chunk_idx += 1
+
+                        # Concatenate with crossfade; if empty, return tiny silence
+                        if len(kept_segments) == 0:
+                            audio_out = torch.zeros(1, int(0.01 * out_sr))
+                        else:
+                            audio_out = crossfade_concat(
+                                kept_segments,
+                                out_sr,
+                                crossfade_seconds=crossfade_seconds,
+                            )
+
+                        audio_results.append(
+                            {
+                                "audio_data": audio_out,
+                                "sample_rate": out_sr,
+                                "index": start_idx + i,
+                            }
+                        )
+                        print(
+                            f"Audio generation completed (prompt-aug): sample {start_idx + i}"
+                        )
 
             except Exception as e:
                 print(f"Error processing sample {start_idx + i}: {str(e)}, skipping...")

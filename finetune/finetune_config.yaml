@@ -1,6 +1,6 @@
 path_to_jsonl :           # Path to the training data in JSONL format
 data_output_directory :   # Directory where the processed data will be saved
-data_name :               # Name of the dataset   
+data_name :               # Name of the dataset
 use_normalize :           # Whether to normalize the data (true/false)
 path_to_model :           # Path to the pre-trained model (leave empty to use default HuggingFace model)
 finetuned_model_output :  # Directory where the finetuned model will be saved

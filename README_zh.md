@@ -26,14 +26,15 @@ MOSS-TTSD（text to spoken dialogue）是一个开源的中英双语口语对话
 
 ## 亮点
 
-- **高表现力对话语音**：基于统一语义-声学神经音频Codec、预训练大语言模型、百万小时TTS数据与约40万小时的真实/合成对话语音数据，MOSS-TTSD能够生成高表现力，高自然度，具有自然对话韵律的拟人对话语音。
+- **高表现力对话语音**：基于统一语义-声学神经音频Codec、预训练大语言模型、百万小时TTS数据与对话语音数据，MOSS-TTSD能够生成高表现力，高自然度，具有自然对话韵律的拟人对话语音。
 - **双说话人零样本声音克隆**：MOSS-TTSD支持零样本双说话人克隆，按脚本精确进行角色/声线切换。只需要提供10到20秒的参考音频片段。
 - **中英双语**：MOSS-TTSD支持中英两种语言的高表现力语音生成。
-- **长音频生成**：得益于低码率Codec与训练框架优化，MOSS-TTSD在长音频生成场景进行了大量训练（训练最大长度达到960s），能够单次生成超长音频。
+- **长音频生成**：得益于低码率Codec与训练框架优化，MOSS-TTSD在长音频生成场景进行了大量训练（训练最大长度达到1700s），能够单次生成超长音频。
 - **开源可商用**：当前与后续版本将保持开源，支持免费商用。
 
 ## 最新动态 🚀
 
+- **[2025-11-01]** 我们发布了 MOSS-TTSD v0.7：显著提升了音质、声音克隆能力与稳定性，支持32khz高音质输出，并大幅拓展了单次生成长度（960s->1700s），更够比较稳定地根据说话人标签生成语音事件。
 - **[2025-09-09]** 我们支持了 SGLang 推理引擎加速模型推理，最高可加速**16倍**。
 - **[2025-08-25]** 我们发布了 32khz XY-Tokenizer。
 - **[2025-08-12]** 我们支持了 MOSS-TTSD v0.5 的流式推理。
@@ -60,7 +61,7 @@ pip install flash-attn
 
 ```bash
 mkdir -p XY_Tokenizer/weights
-huggingface-cli download fnlp/XY_Tokenizer_TTSD_V0_32k xy_tokenizer.ckpt --local-dir ./XY_Tokenizer/weights/
+huggingface-cli download fnlp/MOSS_TTSD_tokenizer MOSS_TTSD_tokenizer --local-dir ./XY_Tokenizer/weights/
 ```
 
 ## 使用方法
@@ -87,17 +88,9 @@ python inference.py --jsonl examples/examples.jsonl --output_dir outputs --seed 
 
 #### JSONL 输入格式
 
-MOSS-TTSD支持多种输入格式：
+MOSS-TTSD 支持两种输入格式：
 
-**格式1：仅文本（不进行声音克隆，使用模型随机音色）**
-
-```json
-{
-  "text": "[S1]说话人1的内容[S2]说话人2的内容[S1]..."
-}
-```
-
-**格式2：分别提供两位说话人的参考音频**
+**格式1：分别提供两位说话人的参考音频**
 
 ```json
 {
@@ -110,7 +103,7 @@ MOSS-TTSD支持多种输入格式：
 }
 ```
 
-**格式3：共享参考音频（一个参考音频包含两个说话人的内容）**
+**格式2：共享参考音频（一个参考音频包含两个说话人的内容）**
 
 ```json
 {
@@ -128,12 +121,12 @@ MOSS-TTSD支持多种输入格式：
 - `text`：带 `[S1]`、`[S2]` 说话人标签的对话脚本（必填）
 - `base_path`：相对路径的基准目录（可选）
 
-**用于声音克隆（格式2）：**
+**用于声音克隆（格式1）：**
 
 - `prompt_audio_speaker1/2`：两位说话人的参考音频（可相对 `base_path`）
 - `prompt_text_speaker1/2`：对应参考音频的文本，有助于更好匹配音色
 
-**用于共享参考（格式3）：**
+**用于共享参考（格式2）：**
 
 - `prompt_audio`：包含两位说话人的共享参考音频（可相对 `base_path`）
 - `prompt_text`：对应的参考文本，亦使用 `[S1]`、`[S2]` 区分
