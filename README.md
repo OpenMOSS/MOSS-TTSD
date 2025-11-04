@@ -8,11 +8,12 @@
     </p>
     <a href="https://www.open-moss.com/en/moss-ttsd/"><img src="https://img.shields.io/badge/Blog-Read%20More-green" alt="blog"></a>
     <a href="https://www.open-moss.com/en/moss-ttsd/"><img src="https://img.shields.io/badge/Paper-Coming%20Soon-orange" alt="paper"></a>
-    <a href="https://huggingface.co/fnlp/MOSS-TTSD-v0.5"><img src="https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Model%20Page-yellow" alt="Hugging Face"></a>
     <a href="https://huggingface.co/spaces/fnlp/MOSS-TTSD"><img src="https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Spaces-blue" alt="Hugging Face Spaces"></a>
     <a href="https://github.com/"><img src="https://img.shields.io/badge/Python-3.10+-orange" alt="version"></a>
     <a href="https://github.com/OpenMOSS/MOSS-TTSD"><img src="https://img.shields.io/badge/PyTorch-2.0+-brightgreen" alt="python"></a>
     <a href="https://github.com/OpenMOSS/MOSS-TTSD"><img src="https://img.shields.io/badge/License-Apache%202.0-blue.svg" alt="mit"></a>
+    <br>
+    <a href="https://huggingface.co/fnlp/MOSS-TTSD-v0.7"><img src="https://img.shields.io/badge/%F0%9F%A4%97%20MOSS%20TTSD%20-v0.7-yellow" alt="MOSS-TTSD-v0.5"></a>
 </div>
 
 # MOSS-TTSD 🪐
@@ -24,7 +25,7 @@
 MOSS-TTSD (text to spoken dialogue) is an open-source bilingual spoken dialogue synthesis model that supports both Chinese and English.
 It can transform dialogue scripts between two speakers into natural, expressive conversational speech.
 MOSS-TTSD supports voice cloning and long single-session speech generation, making it ideal for AI podcast production, interviews, and chats.
- For detailed information about the model and demos, please refer to our [Blog-en](https://www.open-moss.com/en/moss-ttsd/) and [中文博客](https://www.open-moss.com/cn/moss-ttsd/). You can also find the model on [Hugging Face](https://huggingface.co/fnlp/MOSS-TTSD-v0.5) and try it out in the [Spaces demo](https://huggingface.co/spaces/fnlp/MOSS-TTSD).
+ For detailed information about the model and demos, please refer to our [Blog-en](https://www.open-moss.com/en/moss-ttsd/) and [中文博客](https://www.open-moss.com/cn/moss-ttsd/). You can also find the model on [Hugging Face](https://huggingface.co/fnlp/MOSS-TTSD-v0.7) and try it out in the [Spaces demo](https://huggingface.co/spaces/fnlp/MOSS-TTSD).
 
 ## Highlights
 
@@ -36,7 +37,7 @@ MOSS-TTSD supports voice cloning and long single-session speech generation, maki
 
 ## News 🚀
 
- - **[2025-11-01]** MOSS-TTSD v0.7 is released! v0.7 significantly improves audio quality, voice cloning capability, and stability, adds support for 32 kHz high‑quality output, greatly extends single‑pass generation length (960s→1700s), and more reliably generates speech events following speaker tags. We recommend using the v0.7 model by default.
+ - **[2025-11-01]** MOSS-TTSD v0.7 is released! v0.7 significantly improves audio quality, voice cloning capability, and stability, adds support for 32 kHz high‑quality output, greatly extends single‑pass generation length (960s→1700s). We recommend using the v0.7 model by default. [MOSS-TTSD v0.7 Model Address](https://huggingface.co/fnlp/MOSS-TTSD-v0.7)
 - **[2025-09-09]** We supported SGLang inference engine to accelerate model inference by up to **16x**.
 - **[2025-08-25]** We released the 32khz version of XY-Tokenizer.
 - **[2025-08-12]** We add support for streaming inference in MOSS-TTSD v0.5.
@@ -59,7 +60,7 @@ pip install flash-attn
 
 ### Download XY-Tokenizer
 
-You also need to download the XY Tokenizer model weights. You can find the weights in the [XY_Tokenizer repository](https://huggingface.co/fnlp/XY_Tokenizer_TTSD_V0_32k).
+You also need to download the XY Tokenizer model weights. You can find the weights in the [XY-Tokenizer-TTSD version repository](https://huggingface.co/fnlp/MOSS_TTSD_tokenizer).
 
 ```bash
 mkdir -p XY_Tokenizer/weights
