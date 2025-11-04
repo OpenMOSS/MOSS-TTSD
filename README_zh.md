@@ -8,11 +8,12 @@
     </p>
     <a href="https://www.open-moss.com/cn/moss-ttsd/"><img src="https://img.shields.io/badge/博客-阅读更多-green" alt="blog"></a>
     <a href="https://www.open-moss.com/en/moss-ttsd/"><img src="https://img.shields.io/badge/Paper-Coming%20Soon-orange" alt="paper"></a>
-    <a href="https://huggingface.co/fnlp/MOSS-TTSD-v0.5"><img src="https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-模型页-yellow" alt="Hugging Face"></a>
     <a href="https://huggingface.co/spaces/fnlp/MOSS-TTSD"><img src="https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Spaces-blue" alt="Hugging Face Spaces"></a>
     <a href="https://github.com/"><img src="https://img.shields.io/badge/Python-3.10+-orange" alt="version"></a>
     <a href="https://github.com/OpenMOSS/MOSS-TTSD"><img src="https://img.shields.io/badge/PyTorch-2.0+-brightgreen" alt="python"></a>
     <a href="https://github.com/OpenMOSS/MOSS-TTSD"><img src="https://img.shields.io/badge/License-Apache%202.0-blue.svg" alt="mit"></a>
+    <br>
+    <a href="https://huggingface.co/fnlp/MOSS-TTSD-v0.7"><img src="https://img.shields.io/badge/%F0%9F%A4%97%20MOSS%20TTSD%20-v0.7-yellow" alt="MOSS-TTSD-v0.5"></a>
 </div>
 
 # MOSS-TTSD 🪐
@@ -22,7 +23,7 @@
 ## 概述
 
 MOSS-TTSD（text to spoken dialogue）是一个开源的中英双语口语对话合成模型，可以将包含两位说话人的对话脚本转换为自然、富有表现力的对话语音。MOSS-TTSD支持双说话人零样本音色克隆与长时间单段语音生成，非常适合播客，访谈，聊天等对话场景。
-详细模型介绍与演示请见我们的[中文博客](https://www.open-moss.com/cn/moss-ttsd/)和[Blog-en](https://www.open-moss.com/en/moss-ttsd/)。模型权重在 [Hugging Face](https://huggingface.co/fnlp/MOSS-TTSD-v0.5) 提供，并可在 [Spaces 演示](https://huggingface.co/spaces/fnlp/MOSS-TTSD) 在线体验。
+详细模型介绍与演示请见我们的[中文博客](https://www.open-moss.com/cn/moss-ttsd/)和[Blog-en](https://www.open-moss.com/en/moss-ttsd/)。模型权重在 [Hugging Face](https://huggingface.co/fnlp/MOSS-TTSD-v0.7) 提供，并可在 [Spaces 演示](https://huggingface.co/spaces/fnlp/MOSS-TTSD) 在线体验。
 
 ## 亮点
 
@@ -34,7 +35,7 @@ MOSS-TTSD（text to spoken dialogue）是一个开源的中英双语口语对话
 
 ## 最新动态 🚀
 
-- **[2025-11-01]** 我们发布了 MOSS-TTSD v0.7：显著提升了音质、声音克隆能力与稳定性，支持32khz高音质输出，并大幅拓展了单次生成长度（960s->1700s），更够比较稳定地根据说话人标签生成语音事件。
+- **[2025-11-01]** 我们发布了 MOSS-TTSD v0.7：显著提升了音质、声音克隆能力与稳定性，支持32khz高音质输出，并大幅拓展了单次生成长度（960s->1700s）。我们推荐默认使用MOSS-TTSD v0.7版本。[MOSS-TTSD v0.7 模型地址](https://huggingface.co/fnlp/MOSS-TTSD-v0.7)
 - **[2025-09-09]** 我们支持了 SGLang 推理引擎加速模型推理，最高可加速**16倍**。
 - **[2025-08-25]** 我们发布了 32khz XY-Tokenizer。
 - **[2025-08-12]** 我们支持了 MOSS-TTSD v0.5 的流式推理。
@@ -57,7 +58,7 @@ pip install flash-attn
 
 ### 下载 XY-Tokenizer 权重
 
-首先需要下载 XY-Tokenizer 的Codec模型权重，见 [XY_Tokenizer仓库](https://huggingface.co/fnlp/XY_Tokenizer_TTSD_V0_32k)。
+首先需要下载 XY-Tokenizer 的Codec模型权重，见[XY-Tokenizer-TTSD版本仓库](https://huggingface.co/fnlp/MOSS_TTSD_tokenizer)。
 
 ```bash
 mkdir -p XY_Tokenizer/weights
