@@ -184,9 +184,10 @@ LANGUAGES = {
 
 # Model configuration
 SYSTEM_PROMPT = "You are a speech synthesizer that generates natural, realistic, and human-like conversational audio from dialogue text."
-MODEL_PATH = "fnlp/MOSS-TTSD-v0.5"
-SPT_CONFIG_PATH = "XY_Tokenizer/config/xy_tokenizer_32k_config.yaml"
-SPT_CHECKPOINT_PATH = "XY_Tokenizer/weights/xy_tokenizer.ckpt"
+MODEL_PATH = "fnlp/MOSS-TTSD-v0.7"
+# Align SPT config/weights with CLI inference
+SPT_CONFIG_PATH = "XY_Tokenizer/config/MOSS_TTSD_tokenizer.yaml"
+SPT_CHECKPOINT_PATH = "XY_Tokenizer/weights/MOSS_TTSD_tokenizer"
 MAX_CHANNELS = 8
 
 # Global variables for caching loaded models
@@ -251,29 +252,29 @@ def process_single_audio_generation(
 
         # Handle different audio input modes (mutually exclusive)
         if audio_mode == "Single":
-            # Use single audio mode
+            # Strict single-audio requirement
+            if not prompt_audio_single:
+                return (
+                    None,
+                    "Error: In Single mode, please provide one prompt_audio and its text.",
+                )
             item["prompt_audio"] = prompt_audio_single
             item["prompt_text"] = prompt_text_single
-        elif audio_mode == "Role" and prompt_audio_1 and prompt_audio_2:
-            # Use role audio mode (requires both audio files)
+        elif audio_mode == "Role":
+            # Strict role-audio requirement: both speakers must be provided
+            if not (prompt_audio_1 and prompt_audio_2):
+                return (
+                    None,
+                    "Error: In Role mode, please provide both Role1 and Role2 reference audios.",
+                )
             item["prompt_audio_speaker1"] = prompt_audio_1
             item["prompt_text_speaker1"] = prompt_text_1 if prompt_text_1 else ""
             item["prompt_audio_speaker2"] = prompt_audio_2
             item["prompt_text_speaker2"] = prompt_text_2 if prompt_text_2 else ""
-        elif audio_mode == "Role" and prompt_audio_1:
-            # Only Role 1 audio provided, treat as single audio
-            print("Only Role 1 audio provided, treating as single audio.")
-            item["prompt_audio"] = prompt_audio_1
-            item["prompt_text"] = prompt_text_1 if prompt_text_1 else ""
-        elif audio_mode == "Role" and prompt_audio_2:
-            # Only Role 2 audio provided, treat as single audio
-            print("Only Role 2 audio provided, treating as single audio.")
-            item["prompt_audio"] = prompt_audio_2
-            item["prompt_text"] = prompt_text_2 if prompt_text_2 else ""
         else:
             return (
                 None,
-                "Error: Please select a mode and provide corresponding audio files\n- Single Audio Mode: Provide one audio file and corresponding text\n- Role Mode: Provide audio files for Role1 and Role2",
+                "Error: Please select an audio input mode (Single or Role).",
             )
 
         # Set random seed to ensure reproducible results
@@ -290,6 +291,7 @@ def process_single_audio_generation(
             system_prompt=SYSTEM_PROMPT,
             start_idx=0,
             use_normalize=use_normalize,
+            silence_duration=0.1,
         )
 
         # Check results
