@@ -1,0 +1,19 @@
+torch>=2.0.0
+torchaudio>=2.0.0
+transformers==4.53.2
+gradio>=4.0.0
+numpy>=1.21.0
+accelerate>=0.20.0
+PyPDF2
+beautifulsoup4
+soundfile
+librosa
+tqdm
+requests
+openai
+PyYAML
+einops
+huggingface_hub
+liger_kernel
+pydub
+# flash-attn    # Need to install separately
