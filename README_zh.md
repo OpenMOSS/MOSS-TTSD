@@ -1,6 +1,6 @@
 <div align="center">
     <h1>
-    MOSS-TTSD: Text to Spoken Dialogue Generation
+    MOSS-TTSD：从文本到对话语音生成
     </h1>
     <p>
     <img src="asset/OpenMOSS_logo.png" alt="OpenMOSS Logo" width="300">
@@ -22,44 +22,43 @@
 
 [English](README.md) | [简体中文](README_zh.md)
 
-<!-- **MOSS-TTSD** is a long-form spoken dialogue generation model that enables highly expressive multi-party conversational speech synthesis across multiple languages. It supports continuous long-duration generation, flexible multi-speaker dialogue control, and state-of-the-art zero-shot voice cloning with only short reference audio. MOSS-TTSD is designed for real-world long-form content creation, including podcasts, audiobook, sports and esports commentary, dubbing, crosstalk, and entertainment scenarios. （about）-->
-
-
-## Overview
+## 概述
  <p align="center">
     <img src="asset/ttsd.png" alt="alt text" width="330">
   </p>
 
-MOSS-TTSD is the long-form dialogue specialist within our open-source [MOSS‑TTS Family](https://github.com/OpenMOSS/MOSS-TTS). While foundational models typically prioritize high-fidelity single-speaker synthesis, MOSS-TTSD is architected to bridge the gap between isolated audio samples and cohesive, continuous human interaction.
-The model represents a paradigm shift from "text-to-speech" to "script-to-conversation." By prioritizing the flow and emotional nuances of multi-party engagement, MOSS-TTSD transforms static dialogue scripts into dynamic, expressive oral performances. It is designed to serve as a robust backbone for creators and developers who require a seamless transition between distinct speaker personas without sacrificing narrative continuity.
-Whether it is capturing the spontaneous energy of a live talk show or the structured complexity of a multilingual drama, MOSS-TTSD provides the stability and expressive depth necessary for professional-grade, long-form content creation in an open-source framework.
+MOSS-TTSD 是开源 [MOSS‑TTS Family](https://github.com/OpenMOSS/MOSS-TTS) 中专注长时多说话人对话生成的模型。相比主要针对高保真单人语音合成的基础模型，MOSS-TTSD 重点解决从离散语音片段到连续、连贯、多人互动语音内容之间的衔接问题。
+
+该模型将任务范式从“text-to-speech”推进到“script-to-conversation”。通过强调多人互动中的节奏、情绪与角色一致性，MOSS-TTSD 能将静态脚本转化为动态、自然、富有表现力的对话语音，适合需要多角色切换且保持叙事连续性的创作者与开发者。
+
+无论是直播访谈的临场感，还是多语言剧情内容的结构化表达，MOSS-TTSD 都能在开源框架下提供面向专业长内容生产所需的稳定性与表现力。
 
 
-## Highlights
-- **From Monologue to Dialogue**: Unlike traditional TTS which optimizes for reading, MOSS-TTSD masters the rhythm of conversation. It supports 1 to 5 speakers with flexible control, handling natural turn-taking, overlapping speech patterns, and distinct persona maintenance.
-- **Extreme Long-Context Modeling**: moving beyond short-sentence generation, the model is architected for stability over long durations, supporting up to 60 minutes of coherent audio in a single session with consistent identity.
-- **Diverse Scenario Adaptation**: fine-tuned for high-variability scenarios including conversational media (AI Podcasts), dynamic commentary (Sports/Esports), and entertainment (Audiobooks, Dubbing, and Crosstalk).
-- **Multilingual & Zero-Shot Capabilities**: features state-of-the-art zero-shot voice cloning requiring only short reference audio, with robust cross-lingual performance across major languages including Chinese, English, Japanese, and European languages.
+## 亮点
+- **从独白到对话**：不同于偏朗读优化的传统 TTS，MOSS-TTSD 更注重对话韵律，可灵活支持 1 到 5 位说话人，处理自然轮替、重叠发言和角色一致性。
+- **超长上下文建模**：突破短句生成范式，面向长时段稳定性设计，单次会话最长可支持约 60 分钟一致且连贯的语音生成。
+- **多场景适配**：针对高变化场景进行了专项优化，包括 AI 播客、体育/电竞解说、有声书、配音与相声等。
+- **多语言与零样本能力**：仅需短参考音频即可进行高质量零样本音色克隆，并在中文、英文、日文及欧洲语种上具备稳定跨语种表现。
 
 
-## News 🚀
-- **[2026-2-10]** MOSS-TTSD v1.0 is released! MOSS-TTSD v1.0 is officially released! This milestone version redefines long-form synthesis with 60-minute single-session context and support for multi-party interactions. It significantly expands multilingual capabilities and diverse usage scenarios.
- - **[2025-11-01]** MOSS-TTSD v0.7 is released! v0.7 significantly improves audio quality, voice cloning capability, and stability, adds support for 32 kHz high‑quality output, greatly extends single‑pass generation length (960s→1700s).
-- **[2025-09-09]** We supported SGLang inference engine to accelerate model inference by up to **16x**.
-- **[2025-08-25]** We released the 32khz version of XY-Tokenizer.
-- **[2025-08-12]** We add support for streaming inference in MOSS-TTSD v0.5.
-- **[2025-07-29]** We provide the SiliconFlow API interface and usage examples for MOSS-TTSD v0.5.
-- **[2025-07-16]** We open-source the fine-tuning code for MOSS-TTSD v0.5, supporting full-parameter fine-tuning, LoRA fine-tuning, and multi-node training.
-- **[2025-07-04]** MOSS-TTSD v0.5 is released! v0.5 has enhanced the accuracy of timbre switching, voice cloning capability, and model stability.
-- **[2025-06-20]** MOSS-TTSD v0 is released! Moreover, we provide a podcast generation pipeline named Podever, which can automatically convert PDF, URL, or long text files into high-quality podcasts.
+## 更新日志 🚀
+- **[2026-2-10]** 发布 MOSS-TTSD v1.0。该里程碑版本支持单次 60 分钟上下文与多人交互，大幅扩展了多语言能力和应用场景。
+- **[2025-11-01]** 发布 MOSS-TTSD v0.7。显著提升音质、音色克隆能力和稳定性，新增 32 kHz 高音质输出，并将单次生成长度从 960s 提升至 1700s。
+- **[2025-09-09]** 支持 SGLang 推理引擎，推理速度最高可提升至 **16x**。
+- **[2025-08-25]** 发布 XY-Tokenizer 的 32 kHz 版本。
+- **[2025-08-12]** MOSS-TTSD v0.5 新增流式推理支持。
+- **[2025-07-29]** 提供 MOSS-TTSD v0.5 的 SiliconFlow API 接口与使用示例。
+- **[2025-07-16]** 开源 MOSS-TTSD v0.5 微调代码，支持全参微调、LoRA 微调与多机训练。
+- **[2025-07-04]** 发布 MOSS-TTSD v0.5，增强音色切换准确率、音色克隆能力与模型稳定性。
+- **[2025-06-20]** 发布 MOSS-TTSD v0，并提供播客生成管线 Podever，可将 PDF、URL 或长文本自动转换为高质量播客。
 
-**Note:** You can still access the previous version, MOSS-TTSD v0.7, in the [legacy v0.7 folder](./legacy/v0.7/README.md).
+**说明：** 你仍可在 [legacy v0.7 folder](./legacy/v0.7/README.md) 访问旧版 MOSS-TTSD v0.7。
 
-## Installation
+## 安装
 
-To run MOSS-TTSD, you need to install the required dependencies. You can use pip and conda to set up your environment.
+运行 MOSS-TTSD 需要先安装依赖，推荐使用 conda + pip。
 
-### Using conda
+### 使用 conda
 
 ```bash
 conda create -n moss_ttsd python=3.12 -y && conda activate moss_ttsd
@@ -67,11 +66,11 @@ pip install -r requirements.txt
 pip install flash-attn
 ```
 
-## Usage
+## 使用方式
 
-### Quick Start
+### 快速开始
 
-MOSS-TTSD uses a **continuation** workflow: provide reference audio for each speaker, their transcripts as a prefix, and the dialogue text to generate. The model continues in each speaker's identity.
+MOSS-TTSD 采用 **continuation** 工作流：为每位说话人提供参考音频与对应转写作为前缀，再提供要生成的对话文本，模型会在各说话人身份上继续生成语音。
 
 ```python
 import os
@@ -195,9 +194,10 @@ with torch.no_grad():
             sample_idx += 1
 
 ```
-### Batch Inference
 
-You can use the provided inference script for batch inference. The script automatically uses all visible GPUs. You can control GPU visibility via `export CUDA_VISIBLE_DEVICES=<device_ids>`.
+### 批量推理
+
+你可以使用仓库内置的推理脚本做批量生成。脚本会自动使用所有可见 GPU，可通过 `export CUDA_VISIBLE_DEVICES=<device_ids>` 控制可见设备。
 
 ```bash
 python inference.py \
@@ -210,25 +210,26 @@ python inference.py \
   --text_normalize
 ```
 
-Parameters:
+参数说明：
 
-- `--model_path`: Path or HuggingFace model ID for MOSS-TTSD.
-- `--codec_model_path`: Path or HuggingFace model ID for MOSS-Audio-Tokenizer.
-- `--input_jsonl`: Path to the input JSONL file containing dialogue scripts and speaker prompts.
-- `--save_dir`: Directory where the generated audio files will be saved.
-- `--mode`: Inference mode. Choices: `generation`, `continuation`, `voice_clone`, `voice_clone_and_continuation`. We recommend using `voice_clone_and_continuation` for the best voice cloning experience.
-- `--batch_size`: Number of samples per batch (default: `1`).
-- `--max_new_tokens`: Maximum number of new tokens to generate. Controls total generated audio length (1s ≈ 12.5 tokens).
-- `--temperature`: Sampling temperature (default: `1.1`).
-- `--top_p`: Top-p sampling threshold (default: `0.9`).
-- `--top_k`: Top-k sampling threshold (default: `50`).
-- `--repetition_penalty`: Repetition penalty (default: `1.1`).
-- `--text_normalize`: Normalize input text (**recommended to always enable**).
-- `--sample_rate_normalize`: Resample prompt audios to the lowest sample rate before encoding (**recommended when using 2 or more speakers**).
+- `--model_path`：MOSS-TTSD 的本地路径或 Hugging Face 模型 ID。
+- `--codec_model_path`：MOSS-Audio-Tokenizer 的本地路径或 Hugging Face 模型 ID。
+- `--input_jsonl`：输入 JSONL 文件路径，包含对话脚本与说话人提示信息。
+- `--save_dir`：生成音频的输出目录。
+- `--mode`：推理模式，可选 `generation`、`continuation`、`voice_clone`、`voice_clone_and_continuation`，推荐使用 `voice_clone_and_continuation` 以获得更好克隆效果。
+- `--batch_size`：批大小，默认 `1`。
+- `--max_new_tokens`：最大新生成 token 数，用于控制总音频长度（约 1 秒 ≈ 12.5 token）。
+- `--temperature`：采样温度，默认 `1.1`。
+- `--top_p`：Top-p 采样阈值，默认 `0.9`。
+- `--top_k`：Top-k 采样阈值，默认 `50`。
+- `--repetition_penalty`：重复惩罚系数，默认 `1.1`。
+- `--text_normalize`：是否进行文本规范化（**建议始终开启**）。
+- `--sample_rate_normalize`：编码前将多说话人提示音频重采样到最低采样率（**当说话人数 >= 2 时推荐开启**）。
 
-#### JSONL Input Format
+#### JSONL 输入格式
 
-The input JSONL file should contain one JSON object per line. MOSS-TTSD supports 1 to 5 speakers per dialogue. Use `[S1]`–`[S5]` tags in the `text` field and provide corresponding `prompt_audio_speakerN` / `prompt_text_speakerN` pairs for each speaker:
+输入 JSONL 每行一个 JSON 对象。MOSS-TTSD 支持 1 到 5 位说话人。请在 `text` 字段中使用 `[S1]`–`[S5]` 标记，并为每位说话人提供对应的 `prompt_audio_speakerN` / `prompt_text_speakerN`：
+
 ```json
 {
   "base_path": "/path/to/audio/files",
@@ -242,11 +243,12 @@ The input JSONL file should contain one JSON object per line. MOSS-TTSD supports
   "prompt_text_speaker5": "Reference text for speaker 5 voice cloning"
 }
 ```
-## Evaluation
-### Objective Evaluation(TTSD-eval)
 
-We introduce a robust evaluation framework leveraging MMS-FA for word-level alignment and utterance segmentation and wespeaker for embedding extraction to derive Speaker Attribution Accuracy (ACC) and Speaker Similarity (SIM).
-Code and data coming soon.
+## 评测
+### 客观评测（TTSD-eval）
+
+我们引入了稳健评测框架，使用 **MMS-FA** 进行词级对齐与话语分段，并使用 **wespeaker** 进行说话人嵌入提取，以计算说话人归属准确率（ACC）和说话人相似度（SIM）。
+评测代码与数据即将发布。
 
 <br>
 
@@ -270,19 +272,20 @@ Code and data coming soon.
 | Doubao_Podcast | 0.8034 | 0.9606 | **0.0472** | - | - | - |
 | MOSS-TTSD (doubao_voice) | **0.8226** | **0.9630** | 0.0571 | - | - | - |
 
-### Subjective Evaluation
-For open-source models, annotators are asked to score each sample pair in terms of speaker attribution accuracy, voice similarity, prosody, and overall quality. Following the methodology of the LMSYS Chatbot Arena, we compute Elo ratings and confidence intervals for each dimension.
+### 主观评测
+
+针对开源模型，我们让标注员从说话人归属准确性、音色相似性、韵律表现和整体质量四个维度对样本对进行偏好判断；参考 LMSYS Chatbot Arena 方法计算各维度 Elo 分数及置信区间。  
 ![alt text](./asset/VS_Open-Source_Models.jpg)
 
-For closed-source models, annotators are only asked to choose the overall preferred one in each pair, and we compute the win rate accordingly.
+针对闭源模型，我们仅比较每对样本的整体偏好并统计胜率。  
 ![alt text](./asset/VS_Proprietary_Models.png)
 
 
-## License
+## 许可证
 
-MOSS-TTSD is released under the Apache 2.0 license.
+MOSS-TTSD 基于 Apache 2.0 协议开源。
 
-## Citation
+## 引用
 
 ```
 @article{moss2025ttsd,
@@ -292,29 +295,29 @@ MOSS-TTSD is released under the Apache 2.0 license.
 }
 ```
 
-## ⚠️ Usage Disclaimer
+## ⚠️ 使用声明
 
-This project provides an open-source spoken dialogue synthesis model intended for academic research, educational purposes, and legitimate applications such as AI podcast production, assistive technologies, and linguistic research. Users must not use this model for unauthorized voice cloning, impersonation, fraud, scams, deepfakes, or any illegal activities, and should ensure compliance with local laws and regulations while upholding ethical standards. The developers assume no liability for any misuse of this model and advocate for responsible AI development and use, encouraging the community to uphold safety and ethical principles in AI research and applications. If you have any concerns regarding ethics or misuse, please contact us.
+本项目提供开源对话语音合成模型，面向学术研究、教育用途以及 AI 播客制作、辅助技术、语言学研究等合法应用场景。严禁将本模型用于未经授权的声音克隆、冒充、欺诈、诈骗、深度伪造或任何违法用途。使用者应遵守所在地法律法规并遵循伦理规范。开发者不对模型被滥用造成的后果承担责任，并倡导社区在 AI 研究与应用中坚持安全与伦理原则。如对伦理或滥用问题有疑问，请联系我们。
 
 <br>
 
 # MOSS-TTS Family
 
-## Introduction
+## 简介
 
 <p align="center">
   <img src="asset/moss_tts_family.jpeg" width="85%" />
 </p>
 
-When a single piece of audio needs to **sound like a real person**, **pronounce every word accurately**, **switch speaking styles across content**, **remain stable over tens of minutes**, and **support dialogue, role‑play, and real‑time interaction**, a single TTS model is often not enough. The **MOSS‑TTS Family** breaks the workflow into five production‑ready models that can be used independently or composed into a complete pipeline.
+当语音内容需要同时满足 **接近真人自然度**、**高发音准确性**、**多风格切换**、**数十分钟稳定生成**，并支持**多人对话、角色扮演和实时交互**时，单一 TTS 模型往往难以覆盖全部需求。**MOSS‑TTS Family** 将生产流程拆分为 5 个可独立使用、也可自由组合的模型。
 
-- **MOSS‑TTS**: MOSS-TTS is the flagship production TTS foundation model, centered on high-fidelity zero-shot voice cloning with controllable long-form synthesis, pronunciation, and multilingual/code-switched speech. It serves as the core engine for scalable narration, dubbing, and voice-driven products.
-- **MOSS‑TTSD**: MOSS-TTSD is a production long-form dialogue model for expressive multi-speaker conversational audio at scale. It supports long-duration continuity, turn-taking control, and zero-shot voice cloning from short references for podcasts, audiobooks, commentary, dubbing, and entertainment dialogue.
-- **MOSS‑VoiceGenerator**: MOSS-VoiceGenerator is an open-source voice design model that creates speaker timbres directly from free-form text, without reference audio. It unifies timbre design, style control, and content synthesis, and can be used standalone or as a voice-design layer for downstream TTS.
-- **MOSS‑SoundEffect**: MOSS-SoundEffect is a high-fidelity text-to-sound model with broad category coverage and controllable duration for real content production. It generates stable audio from prompts across ambience, urban scenes, creatures, human actions, and music-like clips for film, games, interactive media, and data synthesis.
-- **MOSS‑TTS‑Realtime**: MOSS-TTS-Realtime is a context-aware, multi-turn streaming TTS model for real-time voice agents. By conditioning on dialogue history across both text and prior user acoustics, it delivers low-latency synthesis with coherent, consistent voice responses across turns.
+- **MOSS‑TTS**：旗舰级生产 TTS 基座模型，核心能力是高保真零样本音色克隆、可控长文本合成、准确发音与多语言/中英混说，适用于规模化旁白、配音和语音产品。
+- **MOSS‑TTSD**：面向生产的长对话语音模型，可规模化生成富有表现力的多说话人对话音频，支持长时连续、轮替控制和短参考零样本克隆，适用于播客、有声书、解说、配音和娱乐内容。
+- **MOSS‑VoiceGenerator**：开源音色设计模型，无需参考音频即可从自由文本描述直接生成说话人音色，统一了音色设计、风格控制和内容合成，可单独使用或作为下游 TTS 的音色层。
+- **MOSS‑SoundEffect**：高保真文本到音效模型，支持广泛类别与时长可控，面向真实内容生产，可稳定生成环境声、城市场景、生物、人类动作和类音乐片段，适用于影视、游戏、交互媒体和数据合成。
+- **MOSS‑TTS‑Realtime**：上下文感知的多轮流式 TTS 模型，面向实时语音智能体。通过同时利用文本历史与用户历史声学信息，提供低时延、跨轮一致的语音响应。
 
-## Released Models
+## 发布模型
 
 | Model | Architecture | Size | Model Card | Hugging Face | ModelScope |
 |---|---|---:|---|---|---|
