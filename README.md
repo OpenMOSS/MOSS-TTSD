@@ -245,18 +245,9 @@ The input JSONL file should contain one JSON object per line. MOSS-TTSD supports
 ## Evaluation
 ### Objective Evaluation(TTSD-eval)
 
-We introduce a robust evaluation framework leveraging **MMS-FA** for alignment and **wespeaker** for embedding extraction to ensure precise speaker attribution.
+We introduce a robust evaluation framework leveraging MMS-FA for word-level alignment and utterance segmentation and wespeaker for embedding extraction to derive Speaker Attribution Accuracy (ACC) and Speaker Similarity (SIM).
+Code and data coming soon.
 
-
-
-- **Method**: Forced-alignment based segmentation + Similarity-based speaker verification.
-
-- **Metrics**: 
-  - **Speaker Attribution Accuracy (ACC)**
-  - **Speaker Similarity (SIM)**
-  - **Word Error Rate (WER)** computed using **Whisper-large-v3**.
-
-- **Dataset**: 100 multi-turn dialogues (CN/EN) spanning 30s–720s. Covers diverse scenarios including Podcasts, TV dubbing, and Crosstalk. Code and data coming soon.  
 <br>
 
 | Model | ZH - SIM | ZH - ACC | ZH - WER | EN - SIM | EN - ACC | EN - WER |
