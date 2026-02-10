@@ -12,14 +12,14 @@ from torch.utils.data import Dataset
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import argparse
 
+from modeling_asteroid import AsteroidTTSInstruct
+
 # Import peft related modules
 from peft import LoraConfig, PeftModel, TaskType, get_peft_model
 from transformers import AutoTokenizer
 from transformers.tokenization_utils import PreTrainedTokenizer
 from transformers.trainer import Trainer
 from transformers.training_args import TrainingArguments
-
-from modeling_asteroid import AsteroidTTSInstruct
 
 MODEL_PATH = "fnlp/MOSS-TTSD-v0.5"
 MAX_CHANNELS = 8

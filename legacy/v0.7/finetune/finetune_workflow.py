@@ -1,11 +1,10 @@
 import argparse
 import os
 
+import finetune
 import torch
 import yaml
 from data_preprocess import process_data
-
-import finetune
 
 # Set environment variable to disable tokenizers parallelism warning
 os.environ["TOKENIZERS_PARALLELISM"] = "true"

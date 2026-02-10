@@ -7,8 +7,10 @@ from queue import Queue
 import accelerate
 import torch
 import torchaudio
+from modeling_asteroid import AsteroidTTSInstruct
 from tqdm import tqdm
 from transformers.generation.streamers import BaseStreamer
+from XY_Tokenizer.xy_tokenizer.model import XY_Tokenizer
 
 from generation_utils import (
     find_max_valid_positions,
@@ -21,8 +23,6 @@ from generation_utils import (
     rpadding,
     shifting_inputs,
 )
-from modeling_asteroid import AsteroidTTSInstruct
-from XY_Tokenizer.xy_tokenizer.model import XY_Tokenizer
 
 MODEL_PATH = "fnlp/MOSS-TTSD-v0.5"
 SYSTEM_PROMPT = "You are a speech synthesizer that generates natural, realistic, and human-like conversational audio from dialogue text."
