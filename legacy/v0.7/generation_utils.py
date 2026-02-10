@@ -86,9 +86,8 @@ def load_model(
     torch_dtype=torch.bfloat16,
     attn_implementation="flash_attention_2",
 ):
-    from transformers import AutoTokenizer
-
     from modeling_asteroid import AsteroidTTSInstruct
+    from transformers import AutoTokenizer
     from XY_Tokenizer.xy_tokenizer.model import XY_Tokenizer
 
     tokenizer = AutoTokenizer.from_pretrained(model_path)

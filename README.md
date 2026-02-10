@@ -73,6 +73,8 @@ MOSS-TTSD uses a **continuation** workflow: provide reference audio for each spe
 
 ```python
 import os
+import io
+import urllib.request
 from pathlib import Path
 import torch
 import soundfile as sf
@@ -127,8 +129,8 @@ It's a disaster, Jensen. A total disaster.
 # --- Load & resample audio ---
 
 target_sr = int(processor.model_config.sampling_rate)
-audio1, sr1 = sf.read(prompt_audio_speaker1, dtype="float32", always_2d=True)
-audio2, sr2 = sf.read(prompt_audio_speaker2, dtype="float32", always_2d=True)
+audio1, sr1 = sf.read(io.BytesIO(urllib.request.urlopen(prompt_audio_speaker1).read()), dtype="float32", always_2d=True)
+audio2, sr2 = sf.read(io.BytesIO(urllib.request.urlopen(prompt_audio_speaker2).read()), dtype="float32", always_2d=True)
 wav1 = torch.from_numpy(audio1).transpose(0, 1).contiguous()
 wav2 = torch.from_numpy(audio2).transpose(0, 1).contiguous()
 

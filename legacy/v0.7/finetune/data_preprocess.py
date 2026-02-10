@@ -9,9 +9,9 @@ import torch
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from transformers import AutoTokenizer
+from XY_Tokenizer.xy_tokenizer.model import XY_Tokenizer
 
 from generation_utils import load_audio_data, normalize_text, process_jsonl_item
-from XY_Tokenizer.xy_tokenizer.model import XY_Tokenizer
 
 MODEL_PATH = "fnlp/MOSS-TTSD-v0.5"
 SYSTEM_PROMPT = "You are a speech synthesizer that generates natural, realistic, and human-like conversational audio from dialogue text."
