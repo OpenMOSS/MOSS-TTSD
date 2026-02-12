@@ -7,8 +7,9 @@
     <p>
     </p>
     <a href="https://mosi.cn/models/moss-ttsd"><img src="https://img.shields.io/badge/Blog-Read%20More-green" alt="blog"></a>
-    <a href="https://mosi.cn/models/moss-ttsd"><img src="https://img.shields.io/badge/Paper-Coming%20Soon-orange" alt="paper"></a>
+    <a href="https://mosi.cn/models/moss-ttsd"><img src="https://img.shields.io/badge/Paper-Coming%20Soon-red" alt="paper"></a>
     <a href="https://huggingface.co/OpenMOSS-Team/MOSS-TTSD-v1.0"><img src="https://img.shields.io/badge/%F0%9F%A4%97%20MOSS%20TTSD%20-v1.0-yellow" alt="MOSS-TTSD-v1.0"></a>
+     <a href="https://huggingface.co/spaces/OpenMOSS-Team/MOSS-TTSD"><img src="https://img.shields.io/badge/%F0%9F%A4%97%20Huggingface%20%20-space-orange" alt="MOSS-TTSD-space"></a>
     <a href=""><img src="https://img.shields.io/badge/AI Stuidio-Coming%20Soon-blue" alt="AI Studio"></a>
     <a href="https://github.com/"><img src="https://img.shields.io/badge/Python-3.10+-orange" alt="version"></a>
     <a href="https://github.com/OpenMOSS/MOSS-TTSD"><img src="https://img.shields.io/badge/PyTorch-2.0+-brightgreen" alt="python"></a>
