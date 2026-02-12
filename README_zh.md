@@ -54,6 +54,21 @@ MOSS-TTSD 是开源 [MOSS‑TTS Family](https://github.com/OpenMOSS/MOSS-TTS) �
 
 **说明：** 你仍可在 [legacy v0.7 folder](./legacy/v0.7/README.md) 访问旧版 MOSS-TTSD v0.7。
 
+
+## 支持的语言
+
+MOSS-TTSD 目前支持 **20 种语言**：
+
+| Language | Code | Flag | Language | Code | Flag | Language | Code | Flag |
+|---|---|---|---|---|---|---|---|---|
+| 中文 | zh | 🇨🇳 | 英语 | en | 🇺🇸 | 德语 | de | 🇩🇪 |
+| 西班牙语 | es | 🇪🇸 | 法语 | fr | 🇫🇷 | 日语 | ja | 🇯🇵 |
+| 意大利语 | it | 🇮🇹 | 希伯来语 | he | 🇮🇱 | 韩语 | ko | 🇰🇷 |
+| 俄语 | ru | 🇷🇺 | 波斯语（法尔西语） | fa | 🇮🇷 | 阿拉伯语 | ar | 🇸🇦 |
+| 波兰语 | pl | 🇵🇱 | 葡萄牙语 | pt | 🇵🇹 | 捷克语 | cs | 🇨🇿 |
+| 丹麦语 | da | 🇩🇰 | 瑞典语 | sv | 🇸🇪 | 匈牙利语 | hu | 🇭🇺 |
+| 希腊语 | el | 🇬🇷 | 土耳其语 | tr | 🇹🇷 |  |  |  |
+
 ## 安装
 
 运行 MOSS-TTSD 需要先安装依赖，推荐使用 conda + pip。

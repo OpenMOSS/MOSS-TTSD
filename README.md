@@ -55,6 +55,20 @@ Whether it is capturing the spontaneous energy of a live talk show or the struct
 
 **Note:** You can still access the previous version, MOSS-TTSD v0.7, in the [legacy v0.7 folder](./legacy/v0.7/README.md).
 
+## Supported Languages
+
+MOSS-TTSD currently supports **20 languages**:
+
+| Language | Code | Flag | Language | Code | Flag | Language | Code | Flag |
+|---|---|---|---|---|---|---|---|---|
+| Chinese | zh | 🇨🇳 | English | en | 🇺🇸 | German | de | 🇩🇪 |
+| Spanish | es | 🇪🇸 | French | fr | 🇫🇷 | Japanese | ja | 🇯🇵 |
+| Italian | it | 🇮🇹 | Hebrew | he | 🇮🇱 | Korean | ko | 🇰🇷 |
+| Russian | ru | 🇷🇺 | Persian (Farsi) | fa | 🇮🇷 | Arabic | ar | 🇸🇦 |
+| Polish | pl | 🇵🇱 | Portuguese | pt | 🇵🇹 | Czech | cs | 🇨🇿 |
+| Danish | da | 🇩🇰 | Swedish | sv | 🇸🇪 | Hungarian | hu | 🇭🇺 |
+| Greek | el | 🇬🇷 | Turkish | tr | 🇹🇷 |  |  |  |
+
 ## Installation
 
 To run MOSS-TTSD, you need to install the required dependencies. You can use pip and conda to set up your environment.
