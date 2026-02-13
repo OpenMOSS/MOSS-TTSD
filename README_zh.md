@@ -7,8 +7,9 @@
     <p>
     </p>
     <a href="https://mosi.cn/models/moss-ttsd"><img src="https://img.shields.io/badge/Blog-Read%20More-green" alt="blog"></a>
-    <a href="https://mosi.cn/models/moss-ttsd"><img src="https://img.shields.io/badge/Paper-Coming%20Soon-orange" alt="paper"></a>
+    <a href="https://mosi.cn/models/moss-ttsd"><img src="https://img.shields.io/badge/Paper-Coming%20Soon-red" alt="paper"></a>
     <a href="https://huggingface.co/OpenMOSS-Team/MOSS-TTSD-v1.0"><img src="https://img.shields.io/badge/%F0%9F%A4%97%20MOSS%20TTSD%20-v1.0-yellow" alt="MOSS-TTSD-v1.0"></a>
+     <a href="https://huggingface.co/spaces/OpenMOSS-Team/MOSS-TTSD"><img src="https://img.shields.io/badge/%F0%9F%A4%97%20Huggingface%20%20-space-orange" alt="MOSS-TTSD-space"></a>
     <a href=""><img src="https://img.shields.io/badge/AI Stuidio-Coming%20Soon-blue" alt="AI Studio"></a>
     <a href="https://github.com/"><img src="https://img.shields.io/badge/Python-3.10+-orange" alt="version"></a>
     <a href="https://github.com/OpenMOSS/MOSS-TTSD"><img src="https://img.shields.io/badge/PyTorch-2.0+-brightgreen" alt="python"></a>
@@ -53,6 +54,21 @@ MOSS-TTSD 是开源 [MOSS‑TTS Family](https://github.com/OpenMOSS/MOSS-TTS) �
 - **[2025-06-20]** 发布 MOSS-TTSD v0，并提供播客生成管线 Podever，可将 PDF、URL 或长文本自动转换为高质量播客。
 
 **说明：** 你仍可在 [legacy v0.7 folder](./legacy/v0.7/README.md) 访问旧版 MOSS-TTSD v0.7。
+
+
+## 支持的语言
+
+MOSS-TTSD 目前支持 **20 种语言**：
+
+| Language | Code | Flag | Language | Code | Flag | Language | Code | Flag |
+|---|---|---|---|---|---|---|---|---|
+| 中文 | zh | 🇨🇳 | 英语 | en | 🇺🇸 | 德语 | de | 🇩🇪 |
+| 西班牙语 | es | 🇪🇸 | 法语 | fr | 🇫🇷 | 日语 | ja | 🇯🇵 |
+| 意大利语 | it | 🇮🇹 | 希伯来语 | he | 🇮🇱 | 韩语 | ko | 🇰🇷 |
+| 俄语 | ru | 🇷🇺 | 波斯语（法尔西语） | fa | 🇮🇷 | 阿拉伯语 | ar | 🇸🇦 |
+| 波兰语 | pl | 🇵🇱 | 葡萄牙语 | pt | 🇵🇹 | 捷克语 | cs | 🇨🇿 |
+| 丹麦语 | da | 🇩🇰 | 瑞典语 | sv | 🇸🇪 | 匈牙利语 | hu | 🇭🇺 |
+| 希腊语 | el | 🇬🇷 | 土耳其语 | tr | 🇹🇷 |  |  |  |
 
 ## 安装
 
