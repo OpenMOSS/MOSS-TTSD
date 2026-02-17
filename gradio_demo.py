@@ -25,6 +25,66 @@ DEFAULT_ATTN_IMPLEMENTATION = "auto"
 DEFAULT_MAX_NEW_TOKENS = 2000
 MIN_SPEAKERS = 1
 MAX_SPEAKERS = 5
+PRESET_REF_AUDIO_S1 = "asset/reference_02_s1.wav"
+PRESET_REF_AUDIO_S2 = "asset/reference_02_s2.wav"
+PRESET_PROMPT_TEXT_S1 = (
+    "[S1] In short, we embarked on a mission to make America great again for all Americans."
+)
+PRESET_PROMPT_TEXT_S2 = (
+    "[S2] NVIDIA reinvented computing for the first time after 60 years. In fact, Erwin at IBM knows quite "
+    "well that the computer has largely been the same since the 60s."
+)
+PRESET_DIALOGUE_TEXT = (
+    "[S1] Listen, let's talk business. China. I'm hearing things.\n"
+    "People are saying they're catching up. Fast. What's the real scoop?\n"
+    "Their AI, is it a threat?\n"
+    "[S2] Well, the pace of innovation there is extraordinary, honestly.\n"
+    "They have the researchers, and they have the drive.\n"
+    "[S1] Extraordinary? I don't like that. I want us to be extraordinary.\n"
+    "Are they winning?\n"
+    "[S2] I wouldn't say winning, but their progress is very promising.\n"
+    "They are building massive clusters. They're very determined.\n"
+    "[S1] Promising. There it is. I hate that word.\n"
+    "When China is promising, it means we're losing.\n"
+    "It's a disaster, Jensen. A total disaster."
+)
+PRESET_EXAMPLES = [
+    {
+        "name": "Quick Start | reference_02_s1/s2",
+        "speaker_count": 2,
+        "s1_audio": PRESET_REF_AUDIO_S1,
+        "s1_prompt": PRESET_PROMPT_TEXT_S1,
+        "s2_audio": PRESET_REF_AUDIO_S2,
+        "s2_prompt": PRESET_PROMPT_TEXT_S2,
+        "dialogue_text": PRESET_DIALOGUE_TEXT,
+    }
+]
+PRESET_DISPLAY_FIELDS = [
+    ("Speaker Count", "speaker_count"),
+    ("S1 Reference Audio (Optional)", "s1_audio"),
+    ("S1 Prompt Text (Required with reference audio)", "s1_prompt"),
+    ("S2 Reference Audio (Optional)", "s2_audio"),
+    ("S2 Prompt Text (Required with reference audio)", "s2_prompt"),
+    ("Dialogue Text", "dialogue_text"),
+]
+
+
+def _build_preset_table_rows():
+    rows = []
+    row_to_preset = []
+    for preset_idx, preset in enumerate(PRESET_EXAMPLES):
+        for field_name, field_key in PRESET_DISPLAY_FIELDS:
+            value = str(preset.get(field_key, ""))
+            if field_key == "dialogue_text":
+                value = value.replace("\n", " ").strip()
+                if len(value) > 120:
+                    value = value[:120] + " ..."
+            rows.append([field_name, value])
+            row_to_preset.append(preset_idx)
+    return rows, row_to_preset
+
+
+PRESET_TABLE_ROWS, PRESET_TABLE_ROW_TO_PRESET = _build_preset_table_rows()
 
 
 def resolve_attn_implementation(requested: str, device: torch.device, dtype: torch.dtype) -> str | None:
@@ -196,6 +256,59 @@ def update_speaker_panels(speaker_count: int):
     count = int(speaker_count)
     count = max(MIN_SPEAKERS, min(MAX_SPEAKERS, count))
     return [gr.update(visible=(idx < count)) for idx in range(MAX_SPEAKERS)]
+
+
+def apply_preset_selection(evt: gr.SelectData):
+    if evt is None or evt.index is None:
+        return (
+            gr.update(),
+            gr.update(),
+            gr.update(),
+            gr.update(),
+            gr.update(),
+            gr.update(),
+            *[gr.update() for _ in range(MAX_SPEAKERS)],
+        )
+
+    if isinstance(evt.index, (tuple, list)):
+        row_idx = int(evt.index[0])
+    else:
+        row_idx = int(evt.index)
+
+    if row_idx < 0 or row_idx >= len(PRESET_TABLE_ROW_TO_PRESET):
+        return (
+            gr.update(),
+            gr.update(),
+            gr.update(),
+            gr.update(),
+            gr.update(),
+            gr.update(),
+            *[gr.update() for _ in range(MAX_SPEAKERS)],
+        )
+
+    preset_idx = PRESET_TABLE_ROW_TO_PRESET[row_idx]
+    if preset_idx < 0 or preset_idx >= len(PRESET_EXAMPLES):
+        return (
+            gr.update(),
+            gr.update(),
+            gr.update(),
+            gr.update(),
+            gr.update(),
+            gr.update(),
+            *[gr.update() for _ in range(MAX_SPEAKERS)],
+        )
+
+    preset = PRESET_EXAMPLES[preset_idx]
+    panel_updates = update_speaker_panels(int(preset["speaker_count"]))
+    return (
+        gr.update(value=int(preset["speaker_count"])),
+        gr.update(value=str(preset["s1_audio"])),
+        gr.update(value=str(preset["s1_prompt"])),
+        gr.update(value=str(preset["s2_audio"])),
+        gr.update(value=str(preset["s2_prompt"])),
+        gr.update(value=str(preset["dialogue_text"])),
+        *panel_updates,
+    )
 
 
 def _merge_consecutive_speaker_tags(text: str) -> str:
@@ -594,11 +707,33 @@ def build_demo(args: argparse.Namespace):
                 output_audio = gr.Audio(label="Output Audio", type="numpy", elem_id="output_audio")
                 gr.HTML("", elem_id="output_audio_spacer")
                 status = gr.Textbox(label="Status", lines=4, interactive=False, elem_id="output_status")
+                preset_examples = gr.Dataframe(
+                    headers=["Field", "Value (click any row to fill inputs)"],
+                    value=PRESET_TABLE_ROWS,
+                    datatype=["str", "str"],
+                    row_count=(len(PRESET_TABLE_ROWS), "fixed"),
+                    col_count=(2, "fixed"),
+                    interactive=False,
+                    wrap=True,
+                    label="Preset Examples",
+                )
 
         speaker_count.change(
             fn=update_speaker_panels,
             inputs=[speaker_count],
             outputs=speaker_panels,
+        )
+        preset_examples.select(
+            fn=apply_preset_selection,
+            outputs=[
+                speaker_count,
+                speaker_refs[0],
+                speaker_prompts[0],
+                speaker_refs[1],
+                speaker_prompts[1],
+                dialogue_text,
+                *speaker_panels,
+            ],
         )
 
         run_btn.click(
