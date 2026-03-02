@@ -261,8 +261,7 @@ python inference.py \
 ## 评测
 ### 客观评测（TTSD-eval）
 
-我们引入了稳健评测框架，使用 **MMS-FA** 进行词级对齐与话语分段，并使用 **wespeaker** 进行说话人嵌入提取，以计算说话人归属准确率（ACC）和说话人相似度（SIM）。
-评测代码与数据即将发布。
+我们引入了稳健评测框架，使用 **MMS-FA** 进行词级对齐与话语分段，并使用 **wespeaker** 进行说话人嵌入提取，以计算说话人归属准确率（ACC）和说话人相似度（SIM）。评测代码与数据请见 [TTSD-eval](https://github.com/OpenMOSS/TTSD-eval)。
 
 <br>
 
