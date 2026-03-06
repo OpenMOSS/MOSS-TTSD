@@ -8,12 +8,12 @@
     </p>
     <a href="https://www.open-moss.com/cn/moss-ttsd/"><img src="https://img.shields.io/badge/博客-阅读更多-green" alt="blog"></a>
     <a href="https://www.open-moss.com/en/moss-ttsd/"><img src="https://img.shields.io/badge/Paper-Coming%20Soon-orange" alt="paper"></a>
-    <a href="https://huggingface.co/spaces/fnlp/MOSS-TTSD"><img src="https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Spaces-blue" alt="Hugging Face Spaces"></a>
+    <a href="https://huggingface.co/spaces/OpenMOSS-Team/MOSS-TTSD"><img src="https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Spaces-blue" alt="Hugging Face Spaces"></a>
     <a href="https://github.com/"><img src="https://img.shields.io/badge/Python-3.10+-orange" alt="version"></a>
     <a href="https://github.com/OpenMOSS/MOSS-TTSD"><img src="https://img.shields.io/badge/PyTorch-2.0+-brightgreen" alt="python"></a>
     <a href="https://github.com/OpenMOSS/MOSS-TTSD"><img src="https://img.shields.io/badge/License-Apache%202.0-blue.svg" alt="mit"></a>
     <br>
-    <a href="https://huggingface.co/fnlp/MOSS-TTSD-v0.7"><img src="https://img.shields.io/badge/%F0%9F%A4%97%20MOSS%20TTSD%20-v0.7-yellow" alt="MOSS-TTSD-v0.5"></a>
+    <a href="https://huggingface.co/OpenMOSS-Team/MOSS-TTSD-v0.7"><img src="https://img.shields.io/badge/%F0%9F%A4%97%20MOSS%20TTSD%20-v0.7-yellow" alt="MOSS-TTSD-v0.5"></a>
 </div>
 
 # MOSS-TTSD 🪐
@@ -23,7 +23,7 @@
 ## 概述
 
 MOSS-TTSD（text to spoken dialogue）是一个开源的中英双语口语对话合成模型，可以将包含两位说话人的对话脚本转换为自然、富有表现力的对话语音。MOSS-TTSD支持双说话人零样本音色克隆与长时间单段语音生成，非常适合播客，访谈，聊天等对话场景。
-详细模型介绍与演示请见我们的[中文博客](https://www.open-moss.com/cn/moss-ttsd/)和[Blog-en](https://www.open-moss.com/en/moss-ttsd/)。模型权重在 [Hugging Face](https://huggingface.co/fnlp/MOSS-TTSD-v0.7) 提供，并可在 [Spaces 演示](https://huggingface.co/spaces/fnlp/MOSS-TTSD) 在线体验。
+详细模型介绍与演示请见我们的[中文博客](https://www.open-moss.com/cn/moss-ttsd/)和[Blog-en](https://www.open-moss.com/en/moss-ttsd/)。模型权重在 [Hugging Face](https://huggingface.co/OpenMOSS-Team/MOSS-TTSD-v0.7) 提供，并可在 [Spaces 演示](https://huggingface.co/spaces/OpenMOSS-Team/MOSS-TTSD) 在线体验。
 
 ## 亮点
 
@@ -35,7 +35,8 @@ MOSS-TTSD（text to spoken dialogue）是一个开源的中英双语口语对话
 
 ## 最新动态 🚀
 
-- **[2025-11-01]** 我们发布了 MOSS-TTSD v0.7：显著提升了音质、声音克隆能力与稳定性，支持32khz高音质输出，并大幅拓展了单次生成长度（960s->1700s）。我们推荐默认使用MOSS-TTSD v0.7版本。[MOSS-TTSD v0.7 模型地址](https://huggingface.co/fnlp/MOSS-TTSD-v0.7)
+- **[2026-03-06]** 我们支持了 MOSS-TTSD v0.7 的 SGLang 端到端推理。
+- **[2025-11-01]** 我们发布了 MOSS-TTSD v0.7：显著提升了音质、声音克隆能力与稳定性，支持32khz高音质输出，并大幅拓展了单次生成长度（960s->1700s）。我们推荐默认使用MOSS-TTSD v0.7版本。[MOSS-TTSD v0.7 模型地址](https://huggingface.co/OpenMOSS-Team/MOSS-TTSD-v0.7)
 - **[2025-09-09]** 我们支持了 SGLang 推理引擎加速模型推理，最高可加速**16倍**。
 - **[2025-08-25]** 我们发布了 32khz XY-Tokenizer。
 - **[2025-08-12]** 我们支持了 MOSS-TTSD v0.5 的流式推理。
@@ -58,11 +59,11 @@ pip install flash-attn
 
 ### 下载 XY-Tokenizer 权重
 
-首先需要下载 XY-Tokenizer 的Codec模型权重，见[XY-Tokenizer-TTSD版本仓库](https://huggingface.co/fnlp/MOSS_TTSD_tokenizer)。
+首先需要下载 XY-Tokenizer 的Codec模型权重，见[XY-Tokenizer-TTSD版本仓库](https://huggingface.co/OpenMOSS-Team/MOSS_TTSD_tokenizer)。
 
 ```bash
 mkdir -p XY_Tokenizer/weights
-huggingface-cli download fnlp/MOSS_TTSD_tokenizer MOSS_TTSD_tokenizer --local-dir ./XY_Tokenizer/weights/
+huggingface-cli download OpenMOSS-Team/MOSS_TTSD_tokenizer MOSS_TTSD_tokenizer --local-dir ./XY_Tokenizer/weights/
 ```
 
 ## 使用方法
@@ -346,7 +347,7 @@ python finetune/data_preprocess.py --jsonl <path_to_jsonl> --model_path <path_to
 #### 参数说明
 
 - `--jsonl`：JSONL 输入路径（必填）
-- `--model_path`：预训练 MOSS-TTSD 模型目录（可选，不填默认使用 `fnlp/MOSS-TTSD-v0.5`）
+- `--model_path`：预训练 MOSS-TTSD 模型目录（可选，不填默认使用 `OpenMOSS-Team/MOSS-TTSD-v0.5`）
 - `--output_dir`：处理后数据的输出目录（必填）
 - `--data_name`：输出文件名前缀（默认 `processed_data`）
 - `--use_normalize`：是否启用文本归一化（默认 `False`）
@@ -410,7 +411,7 @@ torchrun --nproc_per_node=8 --master_port=29500 finetune/finetune.py \
 
 #### 参数说明
 
-- `--model_path`：预训练 MOSS-TTSD 模型目录的路径（可选，默认 `fnlp/MOSS-TTSD-v0.5`）
+- `--model_path`：预训练 MOSS-TTSD 模型目录的路径（可选，默认 `OpenMOSS-Team/MOSS-TTSD-v0.5`）
 - `--data_dir`：包含已处理训练数据的目录（必填，含 .pkl 与 _metas.npy）
 - `--output_dir`：用于保存微调后模型的目录（必填）
 - `--training_config`：训练配置 YAML 文件的路径（默认 `finetune/training_config.yaml`）
@@ -472,7 +473,7 @@ path_to_jsonl : /path/to/your/training_data.jsonl
 data_output_directory : /path/to/processed_data
 data_name : my_dataset
 use_normalize : true
-path_to_model : # 留空则使用 HuggingFace 上的 fnlp/MOSS-TTSD-v0.5
+path_to_model : # 留空则使用 HuggingFace 上的 OpenMOSS-Team/MOSS-TTSD-v0.5
 finetuned_model_output : /path/to/output/fine_tuned_model
 training_config_file : /path/to/training_config.yaml
 use_lora : true
@@ -496,8 +497,7 @@ python finetune/finetune_workflow.py --config path/to/your/config.yaml
 首先从我们的仓库下载兼容 MOSS-TTSD 的 SGLang 和 transformers 库。
 
 ```bash
-git clone https://github.com/OpenMOSS/sglang
-git clone -b moss-ttsd https://github.com/gaoyang07/transformers
+git clone https://github.com/OpenMOSS/sglang -b moss-ttsd-v0.7-with-xy
 ```
 
 #### 使用 venv 管理环境
@@ -506,50 +506,56 @@ git clone -b moss-ttsd https://github.com/gaoyang07/transformers
 python -m venv moss_ttsd_sglang
 source moss_ttsd_sglang/bin/activate
 pip install ./sglang/python[all]
-pip install ./transformers
 ```
 
 #### 使用 conda 管理环境
 
 ```bash
-conda create -n moss_ttsd_sglang python=3.10
+conda create -n moss_ttsd_sglang python=3.12
 conda activate moss_ttsd_sglang
 pip install ./sglang/python[all]
-pip install ./transformers
 ```
 
 ### 端到端推理服务
 
 #### 启动推理服务器
 
-在启动服务前，下载 [MOSS-TTSD](https://huggingface.co/fnlp/MOSS-TTSD-v0.5) 和 [HuggingFace 版本的 XY_Tokenizer](https://huggingface.co/fnlp/XY_Tokenizer_TTSD_V0_32k_hf)。
+在启动服务前，下载 [MOSS-TTSD-v0.7](https://huggingface.co/OpenMOSS-Team/MOSS-TTSD-v0.7) 和 [HuggingFace 版本的 XY-Tokenizer](https://huggingface.co/OpenMOSS-Team/MOSS_TTSD_Tokenizer_hf)。
 
 ```bash
-git clone https://huggingface.co/fnlp/MOSS-TTSD-v0.5
-git clone https://huggingface.co/fnlp/XY_Tokenizer_TTSD_V0_32k_hf
+git clone https://huggingface.co/OpenMOSS-Team/MOSS-TTSD-v0.7
+git clone https://huggingface.co/OpenMOSS-Team/MOSS_TTSD_Tokenizer_hf
 ```
 或者
 ```bash
-hf download fnlp/MOSS-TTSD-v0.5 --local-dir ./MOSS-TTSD-v0.5
-hf download fnlp/XY_Tokenizer_TTSD_V0_32k_hf --local-dir ./XY_Tokenizer_TTSD_V0_32k_hf
+hf download OpenMOSS-Team/MOSS-TTSD-v0.7 --local-dir ./MOSS-TTSD-v0.7
+hf download OpenMOSS-Team/MOSS_TTSD_Tokenizer_hf --local-dir ./MOSS_TTSD_Tokenizer_hf
+```
+
+下载完成后，执行以下命令整合 MOSS-TTSD 和 XY-Tokenizer 的权重
+```bash
+python fuse_model_with_codec.py --model-path <path-to-moss-ttsd> --codec-path <path-to-xy-tokenizer> --output-dir <path-to-save-model>
 ```
 
 然后运行以下命令启动推理服务器：
 
 ```bash
-python -m sglang.launch_server \
-    --model-path <path-to-MOSS-TTSD-v0.5> \
-    --port 30000 --host 0.0.0.0 \
-    --log-level info \
-    --delay-pattern \
-    --xy-tokenizer-path <path-to-XY_Tokenizer_TTSD_V0_32k_hf>
+SGLANG_VLM_CACHE_SIZE_MB=0 \
+sglang serve \
+  --model-path <path-to-save-model>\
+  --delay-pattern \
+  --trust-remote-code \
+  --disable-radix-cache \
+  --port 30000 --host 0.0.0.0
 ```
 
 首次启动可能因编译耗时较长。看到 `The server is fired up and ready to roll!` 即表示服务器已就绪。
 
-提示：我们的端到端推理服务器包含一个额外的 Codec 模型，该模型会增加约 4GB 的显存（VRAM）占用。如果您使用的 GPU 显存有限，在启动服务器时，请通过 `--mem-fraction-static` 参数设置 SGLang 的显存分配比例，以确保为 Codec 模型预留足够的显存。
+提示：我们的端到端推理服务器会存在一些碎片化的显存（VRAM）占用。如果您使用的 GPU 显存有限，在启动服务器时，请通过 `--mem-fraction-static` 参数设置 SGLang 的显存分配比例，以确保为中间变量预留足够的显存。
 
 #### 运行推理
+
+推理服务的接口是标准的多模态模型文本生成接口，返回的文本字段是音频文件（wav格式）的 base64 编码。
 
 我们提供了一个示例脚本，用于向服务器发送生成请求；你可以使用它进行推理。
 
@@ -570,7 +576,6 @@ python inference_sglang_server.py --url http://localhost:30000 --jsonl examples/
 - `--output_dir`：生成音频的保存目录。脚本会将文件保存为 `output_<idx>.wav`。
 - `--use_normalize`：是否启用文本归一化（**建议开启**）。
 - `--max_new_tokens`：模型将生成的 token 数量上限。
-- `--silence_duration`：参考音频与生成音频之间的静默时长（默认 0 秒），当生成音频开头出现杂音时（通常因为生成音频续写了prompt的尾音），请尝试将该参数设置为0.1。
 
 此外，还可以在 `inference_sglang_server.py` 文件中修改和设置具体的采样参数。
 

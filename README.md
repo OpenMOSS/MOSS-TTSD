@@ -44,8 +44,9 @@ Whether it is capturing the spontaneous energy of a live talk show or the struct
 
 
 ## News 🚀
-- **[2026-2-10]** MOSS-TTSD v1.0 is released! MOSS-TTSD v1.0 is officially released! This milestone version redefines long-form synthesis with 60-minute single-session context and support for multi-party interactions. It significantly expands multilingual capabilities and diverse usage scenarios.
- - **[2025-11-01]** MOSS-TTSD v0.7 is released! v0.7 significantly improves audio quality, voice cloning capability, and stability, adds support for 32 kHz high‑quality output, greatly extends single‑pass generation length (960s→1700s).
+- **[2026-03-06]** We added end-to-end SGLang inference support for MOSS-TTSD v0.7. For detailed instructions, please see the [legacy v0.7 docs](./legacy/v0.7/README.md).
+- **[2026-02-10]** MOSS-TTSD v1.0 is released! MOSS-TTSD v1.0 is officially released! This milestone version redefines long-form synthesis with 60-minute single-session context and support for multi-party interactions. It significantly expands multilingual capabilities and diverse usage scenarios.
+- **[2025-11-01]** MOSS-TTSD v0.7 is released! v0.7 significantly improves audio quality, voice cloning capability, and stability, adds support for 32 kHz high‑quality output, greatly extends single‑pass generation length (960s→1700s).
 - **[2025-09-09]** We supported SGLang inference engine to accelerate model inference by up to **16x**.
 - **[2025-08-25]** We released the 32khz version of XY-Tokenizer.
 - **[2025-08-12]** We add support for streaming inference in MOSS-TTSD v0.5.
@@ -54,7 +55,7 @@ Whether it is capturing the spontaneous energy of a live talk show or the struct
 - **[2025-07-04]** MOSS-TTSD v0.5 is released! v0.5 has enhanced the accuracy of timbre switching, voice cloning capability, and model stability.
 - **[2025-06-20]** MOSS-TTSD v0 is released! Moreover, we provide a podcast generation pipeline named Podever, which can automatically convert PDF, URL, or long text files into high-quality podcasts.
 
-**Note:** You can still access the previous version, MOSS-TTSD v0.7, in the [legacy v0.7 folder](./legacy/v0.7/README.md).
+**Note:** For MOSS-TTSD v0.7 (including end-to-end SGLang inference), please refer to the [legacy v0.7 docs](./legacy/v0.7/README.md) for detailed instructions.
 
 ## Supported Languages
 

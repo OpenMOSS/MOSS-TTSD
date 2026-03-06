@@ -8,12 +8,12 @@
     </p>
     <a href="https://www.open-moss.com/en/moss-ttsd/"><img src="https://img.shields.io/badge/Blog-Read%20More-green" alt="blog"></a>
     <a href="https://www.open-moss.com/en/moss-ttsd/"><img src="https://img.shields.io/badge/Paper-Coming%20Soon-orange" alt="paper"></a>
-    <a href="https://huggingface.co/spaces/fnlp/MOSS-TTSD"><img src="https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Spaces-blue" alt="Hugging Face Spaces"></a>
+    <a href="https://huggingface.co/spaces/OpenMOSS-Team/MOSS-TTSD"><img src="https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Spaces-blue" alt="Hugging Face Spaces"></a>
     <a href="https://github.com/"><img src="https://img.shields.io/badge/Python-3.10+-orange" alt="version"></a>
     <a href="https://github.com/OpenMOSS/MOSS-TTSD"><img src="https://img.shields.io/badge/PyTorch-2.0+-brightgreen" alt="python"></a>
     <a href="https://github.com/OpenMOSS/MOSS-TTSD"><img src="https://img.shields.io/badge/License-Apache%202.0-blue.svg" alt="mit"></a>
     <br>
-    <a href="https://huggingface.co/fnlp/MOSS-TTSD-v0.7"><img src="https://img.shields.io/badge/%F0%9F%A4%97%20MOSS%20TTSD%20-v0.7-yellow" alt="MOSS-TTSD-v0.5"></a>
+    <a href="https://huggingface.co/OpenMOSS-Team/MOSS-TTSD-v0.7"><img src="https://img.shields.io/badge/%F0%9F%A4%97%20MOSS%20TTSD%20-v0.7-yellow" alt="MOSS-TTSD-v0.5"></a>
 </div>
 
 # MOSS-TTSD 🪐
@@ -25,19 +25,20 @@
 MOSS-TTSD (text to spoken dialogue) is an open-source bilingual spoken dialogue synthesis model that supports both Chinese and English.
 It can transform dialogue scripts between two speakers into natural, expressive conversational speech.
 MOSS-TTSD supports voice cloning and long single-session speech generation, making it ideal for AI podcast production, interviews, and chats.
- For detailed information about the model and demos, please refer to our [Blog-en](https://www.open-moss.com/en/moss-ttsd/) and [中文博客](https://www.open-moss.com/cn/moss-ttsd/). You can also find the model on [Hugging Face](https://huggingface.co/fnlp/MOSS-TTSD-v0.7) and try it out in the [Spaces demo](https://huggingface.co/spaces/fnlp/MOSS-TTSD).
+For detailed information about the model and demos, please refer to our [Blog-en](https://www.open-moss.com/en/moss-ttsd/) and [中文博客](https://www.open-moss.com/cn/moss-ttsd/). You can also find the model on [Hugging Face](https://huggingface.co/OpenMOSS-Team/MOSS-TTSD-v0.7) and try it out in the [Spaces demo](https://huggingface.co/spaces/OpenMOSS-Team/MOSS-TTSD).
 
 ## Highlights
 
 - **Highly Expressive Dialogue Speech**: Built on unified semantic-acoustic neural audio codec, a pre-trained large language model, millions of hours of TTS data and conversational speech, MOSS-TTSD generates highly expressive, human-like dialogue speech with natural conversational prosody.
-- **Two-Speaker Voice Cloning**: MOSS-TTSD supports zero-shot two speakers voice cloning and can generate conversational speech with accurate speaker swithcing based on dialogue scripts. Only 10 to 20 seconds of reference audio is needed.
+- **Two-Speaker Voice Cloning**: MOSS-TTSD supports zero-shot two speakers voice cloning and can generate conversational speech with accurate speaker switching based on dialogue scripts. Only 10 to 20 seconds of reference audio is needed.
 - **Chinese-English Bilingual Support**: MOSS-TTSD enables highly expressive speech generation in both Chinese and English.
 - **Long-Form Speech Generation**: Thanks to low-bitrate codec and training framework optimization, MOSS-TTSD has been trained for long speech generation (Training maximum length is 1700s).
 - **Fully Open Source & Commercial-Ready**: MOSS-TTSD and its future updates will be fully open-source and support free commercial use.
 
 ## News 🚀
 
- - **[2025-11-01]** MOSS-TTSD v0.7 is released! v0.7 significantly improves audio quality, voice cloning capability, and stability, adds support for 32 kHz high‑quality output, greatly extends single‑pass generation length (960s→1700s). We recommend using the v0.7 model by default. [MOSS-TTSD v0.7 Model Address](https://huggingface.co/fnlp/MOSS-TTSD-v0.7)
+- **[2026-03-06]** We added end-to-end SGLang inference support for MOSS-TTSD v0.7.
+- **[2025-11-01]** MOSS-TTSD v0.7 is released! v0.7 significantly improves audio quality, voice cloning capability, and stability, adds support for 32 kHz high‑quality output, greatly extends single‑pass generation length (960s→1700s). We recommend using the v0.7 model by default. [MOSS-TTSD v0.7 Model Address](https://huggingface.co/OpenMOSS-Team/MOSS-TTSD-v0.7)
 - **[2025-09-09]** We supported SGLang inference engine to accelerate model inference by up to **16x**.
 - **[2025-08-25]** We released the 32khz version of XY-Tokenizer.
 - **[2025-08-12]** We add support for streaming inference in MOSS-TTSD v0.5.
@@ -60,11 +61,11 @@ pip install flash-attn
 
 ### Download XY-Tokenizer
 
-You also need to download the XY Tokenizer model weights. You can find the weights in the [XY-Tokenizer-TTSD version repository](https://huggingface.co/fnlp/MOSS_TTSD_tokenizer).
+You also need to download the XY Tokenizer model weights. You can find the weights in the [XY-Tokenizer-TTSD version repository](https://huggingface.co/OpenMOSS-Team/MOSS_TTSD_tokenizer).
 
 ```bash
 mkdir -p XY_Tokenizer/weights
-huggingface-cli download fnlp/MOSS_TTSD_tokenizer MOSS_TTSD_tokenizer --local-dir ./XY_Tokenizer/weights/
+huggingface-cli download OpenMOSS-Team/MOSS_TTSD_tokenizer MOSS_TTSD_tokenizer --local-dir ./XY_Tokenizer/weights/
 ```
 
 ## Usage
@@ -345,7 +346,7 @@ python finetune/data_preprocess.py --jsonl <path_to_jsonl> --model_path <path_to
 #### Parameters
 
 - `--jsonl`: Path to the JSONL input file (required)
-- `--model_path`: Path to the pre-trained MOSS-TTSD model directory (optional, defaults to `fnlp/MOSS-TTSD-v0.5` if not provided)
+- `--model_path`: Path to the pre-trained MOSS-TTSD model directory (optional, defaults to `OpenMOSS-Team/MOSS-TTSD-v0.5` if not provided)
 - `--output_dir`: Directory where processed data will be saved (required)
 - `--data_name`: Name prefix for the output files (default: `processed_data`)
 - `--use_normalize`: Enable text normalization (default: `False`)
@@ -411,8 +412,8 @@ torchrun --nproc_per_node=8 --master_port=29500 finetune/finetune.py \
 - `--model_path`: Path to the pre-trained MOSS-TTSD model directory (optional, defaults to `fnlp/MOSS-TTSD-v0.5` if not provided)
 - `--data_dir`: Directory containing the processed training data (.pkl and _metas.npy files) (required)
 - `--output_dir`: Directory where the fine-tuned model will be saved (required)
-- `--training_config`: Path to the training configuration YAML file (default: `training_config.yaml`)
-- `--lora_config`: Path to the LoRA configuration YAML file (default: `lora_config.yaml`)
+- `--training_config`: Path to the training configuration YAML file (default: `finetune/training_config.yaml`)
+- `--lora_config`: Path to the LoRA configuration YAML file (default: `finetune/lora_config.yaml`)
 - `--lora`: Enable LoRA (Low-Rank Adaptation) fine-tuning for memory efficiency (optional)
 
 #### LoRA Configuration
@@ -491,11 +492,10 @@ python finetune/finetune_workflow.py --config path/to/your/config.yaml
 
 ### Environment Setup
 
-First download the MOSS-TTSD‑compatible SGLang and transformers libraries from our repository.
+First download the MOSS-TTSD‑compatible SGLang from our repository.
 
 ```bash
-git clone https://github.com/OpenMOSS/sglang
-git clone -b moss-ttsd https://github.com/gaoyang07/transformers
+git clone https://github.com/OpenMOSS/sglang -b moss-ttsd-v0.7-with-xy
 ```
 
 #### Using venv
@@ -504,52 +504,59 @@ git clone -b moss-ttsd https://github.com/gaoyang07/transformers
 python -m venv moss_ttsd_sglang
 source moss_ttsd_sglang/bin/activate
 pip install ./sglang/python[all]
-pip install ./transformers
 ```
 
 #### Using conda
 
 ```bash
-conda create -n moss_ttsd_sglang python=3.10
+conda create -n moss_ttsd_sglang python=3.12
 conda activate moss_ttsd_sglang
 pip install ./sglang/python[all]
-pip install ./transformers
 ```
 
 ### End-to-End Inference Service
 
 #### Start inference server
 
-Before starting the service, download [MOSS-TTSD](https://huggingface.co/fnlp/MOSS-TTSD-v0.5) and [HuggingFace version of XY_Tokenizer](https://huggingface.co/fnlp/XY_Tokenizer_TTSD_V0_32k_hf).
+Before starting the service, download [MOSS-TTSD-v0.7](https://huggingface.co/OpenMOSS-Team/MOSS-TTSD-v0.7) and [HuggingFace version of XY-Tokenizer](https://huggingface.co/OpenMOSS-Team/MOSS_TTSD_Tokenizer_hf).
 
 ```bash
-git clone https://huggingface.co/fnlp/MOSS-TTSD-v0.5
-git clone https://huggingface.co/fnlp/XY_Tokenizer_TTSD_V0_32k_hf
+git clone https://huggingface.co/OpenMOSS-Team/MOSS-TTSD-v0.7
+git clone https://huggingface.co/OpenMOSS-Team/MOSS_TTSD_Tokenizer_hf
 ```
 or
 ```bash
-hf download fnlp/MOSS-TTSD-v0.5 --local-dir ./MOSS-TTSD-v0.5
-hf download fnlp/XY_Tokenizer_TTSD_V0_32k_hf --local-dir ./XY_Tokenizer_TTSD_V0_32k_hf
+hf download OpenMOSS-Team/MOSS-TTSD-v0.7 --local-dir ./MOSS-TTSD-v0.7
+hf download OpenMOSS-Team/MOSS_TTSD_Tokenizer_hf --local-dir ./MOSS_TTSD_Tokenizer_hf
 ```
 
-Next launch the inference server using the command below:
+After the download is complete, fuse the MOSS-TTSD and XY-Tokenizer weights:
 
 ```bash
-python -m sglang.launch_server \
-    --model-path <path-to-MOSS-TTSD-v0.5> \
-    --port 30000 --host 0.0.0.0 \
-    --log-level info \
-    --delay-pattern \
-    --xy-tokenizer-path <path-to-XY_Tokenizer_TTSD_V0_32k_hf>
+python fuse_model_with_codec.py --model-path <path-to-moss-ttsd> --codec-path <path-to-xy-tokenizer> --output-dir <path-to-save-model>
 ```
 
-The first startup takes longer due to compilation. Once you see `The server is fired up and ready to roll!` the server is ready.
+Then start the inference server:
 
-Tips: Our end-to-end inference server includes an additional Codec model, which adds approximately 4GB VRAM usage. If you are using a GPU with limited VRAM, please set the SGLang VRAM allocation ratio with the `--mem-fraction-static` flag when starting the server, to ensure enough VRAM is reserved for Codec model.
+```bash
+SGLANG_VLM_CACHE_SIZE_MB=0 \
+sglang serve \
+  --model-path <path-to-save-model> \
+  --delay-pattern \
+  --trust-remote-code \
+  --disable-radix-cache \
+  --port 30000 --host 0.0.0.0
+```
+
+The first startup may take longer due to compilation. Once you see `The server is fired up and ready to roll!` the server is ready.
+
+Tips: Our end-to-end inference server may have some fragmented VRAM usage. If your GPU has limited VRAM, set SGLang's VRAM allocation ratio with the `--mem-fraction-static` flag when starting the server to reserve enough memory for intermediate tensors.
 
 #### Run Inference
 
-We provide an example script that sends generation requests to the server; you can use it to run inference.
+The service API is a standard multimodal text-generation API; the returned text field is a base64-encoded audio file (WAV).
+
+We provide an example script that sends generation requests to the server:
 
 ```bash
 python inference_sglang_server.py --host localhost --port 30000 --jsonl examples/examples.jsonl --output_dir outputs --use_normalize

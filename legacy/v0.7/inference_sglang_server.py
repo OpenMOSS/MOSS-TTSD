@@ -1,22 +1,196 @@
 import argparse
 import asyncio
-import io
 import json
 import os
+import tempfile
 from pathlib import Path
+from urllib.parse import urlparse, urlunparse
 
 import aiohttp
 import pybase64
+import torch
 import torchaudio
 
-from generation_utils import load_audio_data, normalize_text, process_jsonl_item
+from generation_utils import normalize_text
 
 sampling_params = {
-    "repetition_penalty": 1.0,
-    "temperature": 0.9,
+    "temperature": 0.8,
     "top_p": 0.95,
     "top_k": 50,
 }
+
+
+def process_jsonl_item(item):
+    """Process JSONL data items and extract audio and text information according to the new format"""
+    base_path = item.get("base_path", "")
+    text = item.get("text", "")
+
+    prompt_audio = None
+    prompt_text = ""
+
+    # Process prompt audio and text
+    if "prompt_audio" in item and "prompt_text" in item:
+        print("Using prompt_audio and prompt_text directly from item.")
+        # If prompt_audio and prompt_text exist, use them directly
+        prompt_audio_val = item["prompt_audio"]
+        if prompt_audio_val:  # Only assign if not empty
+            prompt_audio = prompt_audio_val
+            prompt_text = item["prompt_text"]
+
+            # Only perform path joining when prompt_audio is a string path
+            if isinstance(prompt_audio, str) and base_path and prompt_audio:
+                prompt_audio = os.path.join(base_path, prompt_audio)
+    else:
+        # Otherwise, merge speaker1 and speaker2 information
+        prompt_audio_speaker1 = item.get("prompt_audio_speaker1", "")
+        prompt_text_speaker1 = item.get("prompt_text_speaker1", "")
+        prompt_audio_speaker2 = item.get("prompt_audio_speaker2", "")
+        prompt_text_speaker2 = item.get("prompt_text_speaker2", "")
+
+        has_speaker1_audio = (
+            isinstance(prompt_audio_speaker1, str) and prompt_audio_speaker1
+        ) or isinstance(prompt_audio_speaker1, tuple)
+        has_speaker2_audio = (
+            isinstance(prompt_audio_speaker2, str) and prompt_audio_speaker2
+        ) or isinstance(prompt_audio_speaker2, tuple)
+
+        if has_speaker1_audio or has_speaker2_audio:
+            print("Using speaker1 and speaker2 information for prompt audio and text.")
+            # Process audio: if it's a string path, perform path joining; if it's a tuple, use directly
+            if isinstance(prompt_audio_speaker1, str):
+                speaker1_audio = (
+                    os.path.join(base_path, prompt_audio_speaker1)
+                    if base_path and prompt_audio_speaker1
+                    else prompt_audio_speaker1
+                )
+            else:
+                speaker1_audio = prompt_audio_speaker1  # Use tuple directly
+
+            if isinstance(prompt_audio_speaker2, str):
+                speaker2_audio = (
+                    os.path.join(base_path, prompt_audio_speaker2)
+                    if base_path and prompt_audio_speaker2
+                    else prompt_audio_speaker2
+                )
+            else:
+                speaker2_audio = prompt_audio_speaker2  # Use tuple directly
+
+            prompt_audio = {"speaker1": speaker1_audio, "speaker2": speaker2_audio}
+
+        # Merge text
+        temp_prompt_text = ""
+        if prompt_text_speaker1:
+            temp_prompt_text += f"[S1]{prompt_text_speaker1}"
+        if prompt_text_speaker2:
+            temp_prompt_text += f"[S2]{prompt_text_speaker2}"
+        prompt_text = temp_prompt_text.strip()
+
+    return {"text": text, "prompt_text": prompt_text, "prompt_audio": prompt_audio}
+
+
+def absolutize_prompt_audio(prompt_audio):
+    """Convert any string paths within prompt_audio into absolute paths."""
+    if prompt_audio is None:
+        return None
+    if isinstance(prompt_audio, str):
+        return os.path.abspath(prompt_audio)
+    if isinstance(prompt_audio, dict):
+        return {k: absolutize_prompt_audio(v) for k, v in prompt_audio.items()}
+    return prompt_audio
+
+
+def load_audio_data(prompt_audio, target_sample_rate=16000):
+    """Load audio data and return processed audio tensor
+
+    Args:
+        prompt_audio: Can be in the following formats:
+            - String: audio file path
+            - Tuple: (wav, sr) result from torchaudio.load
+            - Dict: {"speaker1": path_or_tuple, "speaker2": path_or_tuple}
+    """
+    if prompt_audio is None:
+        return None
+
+    try:
+        # Check if prompt_audio is a dictionary (containing speaker1 and speaker2)
+        if (
+            isinstance(prompt_audio, dict)
+            and "speaker1" in prompt_audio
+            and "speaker2" in prompt_audio
+        ):
+            # Process audio from both speakers separately
+            wav1, sr1 = _load_single_audio(prompt_audio["speaker1"])
+            wav2, sr2 = _load_single_audio(prompt_audio["speaker2"])
+            # Merge audio from both speakers
+            wav = merge_speaker_audios(wav1, sr1, wav2, sr2, target_sample_rate)
+            if wav is None:
+                return None
+        else:
+            # Single audio
+            wav, sr = _load_single_audio(prompt_audio)
+            # Resample to 16k
+            if sr != target_sample_rate:
+                wav = torchaudio.functional.resample(wav, sr, target_sample_rate)
+            # Ensure mono channel
+            if wav.shape[0] > 1:
+                wav = wav.mean(dim=0, keepdim=True)  # Convert multi-channel to mono
+            if len(wav.shape) == 1:
+                wav = wav.unsqueeze(0)
+
+        return wav
+    except Exception as e:
+        print(f"Error loading audio data: {e}")
+        raise
+
+
+def _load_single_audio(audio_input):
+    """Load single audio, supports file path or (wav, sr) tuple
+
+    Args:
+        audio_input: String (file path) or tuple (wav, sr)
+
+    Returns:
+        tuple: (wav, sr)
+    """
+    if isinstance(audio_input, tuple) and len(audio_input) == 2:
+        # Already a (wav, sr) tuple
+        wav, sr = audio_input
+        return wav, sr
+    elif isinstance(audio_input, str):
+        # Is a file path, needs to be loaded
+        wav, sr = torchaudio.load(audio_input)
+        return wav, sr
+    else:
+        raise ValueError(f"Unsupported audio input format: {type(audio_input)}")
+
+
+def merge_speaker_audios(wav1, sr1, wav2, sr2, target_sample_rate=16000):
+    """Merge audio data from two speakers"""
+    try:
+        # Process first audio
+        if sr1 != target_sample_rate:
+            wav1 = torchaudio.functional.resample(wav1, sr1, target_sample_rate)
+        # Ensure mono channel
+        if wav1.shape[0] > 1:
+            wav1 = wav1.mean(dim=0, keepdim=True)  # Convert multi-channel to mono
+        if len(wav1.shape) == 1:
+            wav1 = wav1.unsqueeze(0)
+
+        # Process second audio
+        if sr2 != target_sample_rate:
+            wav2 = torchaudio.functional.resample(wav2, sr2, target_sample_rate)
+        # Ensure mono channel
+        if wav2.shape[0] > 1:
+            wav2 = wav2.mean(dim=0, keepdim=True)  # Convert multi-channel to mono
+        if len(wav2.shape) == 1:
+            wav2 = wav2.unsqueeze(0)
+
+        # Concatenate audio
+        merged_wav = torch.cat([wav1, wav2], dim=1)
+        return merged_wav
+    except Exception as e:
+        print(f"Error merging audio: {e}")
+        raise
 
 
 def get_file_path(output_path: str) -> str:
@@ -60,6 +234,19 @@ def get_file_path(output_path: str) -> str:
 
     # Define invalid characters for individual path segments (exclude separators)
     invalid_chars = set('<>:"|?*')  # union of typical Windows-invalid chars
+
+    # Extensions that we treat as explicit file outputs when the path does not yet exist
+    known_file_suffixes = {
+        ".wav",
+        ".mp3",
+        ".flac",
+        ".ogg",
+        ".opus",
+        ".m4a",
+        ".aac",
+        ".wma",
+        ".aiff",
+    }
 
     # Reserved device names on Windows (case-insensitive)
     reserved_windows_names = {
@@ -114,10 +301,12 @@ def get_file_path(output_path: str) -> str:
         # Trailing separator strongly suggests directory even if it does not exist yet
         treat_as_dir = True
 
-    # Additional rule: a non-existing path with no suffix (no extension) is treated as a directory
-    if not treat_as_dir:
-        if (not path_obj.exists()) and path_obj.suffix == "":
-            # No extension and path does not exist => interpret as directory intent
+    # Additional rules for non-existing paths:
+    # * No suffix => directory intent
+    # * Unrecognized suffix (e.g., version numbers like .5) => directory intent
+    if not treat_as_dir and not path_obj.exists():
+        suffix_lower = path_obj.suffix.lower()
+        if suffix_lower == "" or suffix_lower not in known_file_suffixes:
             treat_as_dir = True
 
     if treat_as_dir:
@@ -139,24 +328,24 @@ async def send_generate_request(session, url, payload, output_path, idx):
     try:
         async with session.post(url, json=payload) as response:
             if response.status == 200:
-                content = await response.read()
-                with open(output_path, "wb") as f:
-                    f.write(content)
-                print(f"Audio saved to {output_path}")
-                print(f"Sample Rate: {response.headers.get('sample_rate', 'N/A')}")
-                print(f"Prompt Tokens: {response.headers.get('prompt_tokens', 'N/A')}")
-                print(
-                    f"Completion Tokens: {response.headers.get('completion_tokens', 'N/A')}"
-                )
-                return True
+                content = await response.json()
+                if output_path is not None:
+                    with open(output_path, "wb") as f:
+                        f.write(pybase64.b64decode(content["text"]))
+                    print(f"Audio saved to {output_path}")
+                meta_info = content.get("meta_info", {})
+                print(f"Prompt Tokens: {meta_info.get('prompt_tokens', 'N/A')}")
+                print(f"Completion Tokens: {meta_info.get('completion_tokens', 'N/A')}")
+                print(f"E2E Latency: {meta_info.get('e2e_latency', 'N/A')}")
+                return True, meta_info
             else:
                 error_text = await response.text()
                 print(f"Error for item {idx}: {response.status}")
                 print(error_text)
-                return False
+                return False, None
     except Exception as e:
         print(f"Exception for item {idx}: {e}")
-        return False
+        return False, None
 
 
 def generate_audio(
@@ -182,6 +371,68 @@ def generate_audio(
     )
 
 
+def build_generate_url(url: str, host: str, port: str) -> str:
+    """Build a normalized generate endpoint URL from user input."""
+
+    raw_url = (url or "").strip()
+    raw_host = (host or "").strip()
+    raw_port = (port or "").strip()
+
+    if raw_url:
+        base_url = raw_url
+    else:
+        if not raw_host:
+            raise ValueError("Either url or host must be provided.")
+        if "://" in raw_host or raw_host.startswith("//"):
+            base_url = raw_host
+        else:
+            base_url = raw_host if not raw_port else f"{raw_host}:{raw_port}"
+
+    if base_url.startswith("//"):
+        base_url = "http:" + base_url
+    elif "://" not in base_url:
+        base_url = "http://" + base_url
+
+    parsed = urlparse(base_url)
+    if not parsed.scheme or not parsed.netloc:
+        raise ValueError(f"Invalid server URL: {base_url}")
+
+    username = parsed.username or ""
+    password = parsed.password or ""
+    hostname = parsed.hostname or ""
+    resolved_port = parsed.port
+
+    if not raw_url and raw_port and resolved_port is None:
+        try:
+            resolved_port = int(raw_port)
+        except ValueError as exc:
+            raise ValueError(f"Invalid port: {raw_port}") from exc
+
+    if not hostname:
+        raise ValueError(f"Invalid server URL: {base_url}")
+
+    host_display = hostname
+    if ":" in hostname and not hostname.startswith("["):
+        host_display = f"[{hostname}]"
+
+    if username:
+        auth = username if not password else f"{username}:{password}"
+        netloc = f"{auth}@{host_display}"
+    else:
+        netloc = host_display
+
+    if resolved_port is not None:
+        netloc = f"{netloc}:{resolved_port}"
+
+    path = parsed.path.rstrip("/")
+    if not path:
+        path = "/generate"
+    elif not path.endswith("/generate"):
+        path = f"{path}/generate"
+
+    return urlunparse((parsed.scheme, netloc, path, parsed.params, parsed.query, ""))
+
+
 async def generate_audio_async(
     url: str,
     host: str,
@@ -191,13 +442,15 @@ async def generate_audio_async(
     use_normalize: bool,
     silence_duration: float,
 ):
-    if url is None:
-        url = "http://" + host + ":" + port + "/generate_audio"
-    else:
-        url = url.removesuffix("/") + "/generate_audio"
+    try:
+        url = build_generate_url(url, host, port)
+    except ValueError as e:
+        print(f"Failed to prepare request URL: {e}")
+        return
 
     try:
         output_dir = Path(get_file_path(output_dir).removesuffix("output.wav"))
+        output_dir = output_dir.resolve()
     except (ValueError, OSError) as e:
         print(f"Failed to prepare output directory: {e}")
         return
@@ -222,17 +475,26 @@ async def generate_audio_async(
         for idx, item in enumerate(items):
             processed_item = process_jsonl_item(item)
 
-            text = processed_item["text"]
-            prompt_text = processed_item["prompt_text"]
+            text = str(processed_item["text"])
+            prompt_text = str(processed_item.get("prompt_text") or "")
+
+            if use_normalize:
+                text = normalize_text(text)
+                if prompt_text:
+                    prompt_text = normalize_text(prompt_text)
 
             wav_tensor = load_audio_data(processed_item["prompt_audio"])
 
             prompt_audio_base64 = None
             if wav_tensor is not None:
                 try:
-                    buf = io.BytesIO()
-                    torchaudio.save(buf, wav_tensor, sample_rate=16000, format="wav")
-                    wav_bytes = buf.getvalue()
+                    with tempfile.NamedTemporaryFile(
+                        suffix=".wav", delete=False
+                    ) as tmp:
+                        torchaudio.save(tmp.name, wav_tensor, sample_rate=16000)
+                        tmp.flush()
+                        tmp.seek(0)
+                        wav_bytes = tmp.read()
                     prompt_audio_base64 = pybase64.b64encode(wav_bytes).decode("utf-8")
                 except Exception as e:
                     print(f"Failed to convert wav tensor to base64: {e}")
@@ -240,17 +502,13 @@ async def generate_audio_async(
 
             if prompt_audio_base64:
                 payload = {
-                    "text": text,
-                    "prompt_text": prompt_text,
-                    "prompt_audio": prompt_audio_base64,
-                    "silence_duration": silence_duration,
-                    "use_normalize": use_normalize,
+                    "text": prompt_text + text,
+                    "audio_data": f"data:audio/wav;base64,{prompt_audio_base64}",
                     "sampling_params": sampling_params,
                 }
             else:
                 payload = {
                     "text": text,
-                    "use_normalize": use_normalize,
                     "sampling_params": sampling_params,
                 }
 
