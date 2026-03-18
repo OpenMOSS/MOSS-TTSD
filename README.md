@@ -290,6 +290,12 @@ For open-source models, annotators are asked to score each sample pair in terms 
 For closed-source models, annotators are only asked to choose the overall preferred one in each pair, and we compute the win rate accordingly.
 ![alt text](./asset/VS_Proprietary_Models.png)
 
+## 📚 More Information
+###  🌟 Community Projects
+The MOSS-TTS community has been growing rapidly, and we’re delighted to showcase some outstanding projects and features built by community members:
+- **[ComfyUI-MOSS-TTS](https://github.com/richservo/comfyui-moss-tts)** A MOSS-TTS extension for ComfyUI.
+- **[MOSS-TTS-OpenAI](https://github.com/dasilva333/moss-tts-openai)** An OpenAI-compatible TTS API for MOSS-TTS.
+- **[AnyPod](https://github.com/rulerman/AnyPod)** A podcast generation tool using MOSS-TTS/MOSS-TTSD as the backend.
 
 ## License
 
