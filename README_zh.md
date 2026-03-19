@@ -294,6 +294,12 @@ python inference.py \
 针对闭源模型，我们仅比较每对样本的整体偏好并统计胜率。  
 ![alt text](./asset/VS_Proprietary_Models.png)
 
+## 📚 更多信息
+### 🌟 社区项目
+MOSS-TTS 社区正在快速发展，我们也很高兴展示一些由社区成员构建的优秀项目与功能：
+- **[ComfyUI-MOSS-TTS](https://github.com/richservo/comfyui-moss-tts)**：面向 ComfyUI 的 MOSS-TTS 扩展。
+- **[MOSS-TTS-OpenAI](https://github.com/dasilva333/moss-tts-openai)**：兼容 OpenAI 接口的 MOSS-TTS API。
+- **[AnyPod](https://github.com/rulerman/AnyPod)**：以 MOSS-TTS/MOSS-TTSD 作为后端的播客生成工具。
 
 ## 许可证
 
