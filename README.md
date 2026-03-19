@@ -44,6 +44,7 @@ Whether it is capturing the spontaneous energy of a live talk show or the struct
 
 
 ## News 🚀
+- **[2026-03-18]** We support efficient end-to-end SGLang inference for MOSS-TTSD v1.0.
 - **[2026-03-06]** We added end-to-end SGLang inference support for MOSS-TTSD v0.7. For detailed instructions, please see the [legacy v0.7 docs](./legacy/v0.7/README.md).
 - **[2026-02-10]** MOSS-TTSD v1.0 is released! MOSS-TTSD v1.0 is officially released! This milestone version redefines long-form synthesis with 60-minute single-session context and support for multi-party interactions. It significantly expands multilingual capabilities and diverse usage scenarios.
 - **[2025-11-01]** MOSS-TTSD v0.7 is released! v0.7 significantly improves audio quality, voice cloning capability, and stability, adds support for 32 kHz high‑quality output, greatly extends single‑pass generation length (960s→1700s).
@@ -256,6 +257,94 @@ The input JSONL file should contain one JSON object per line. MOSS-TTSD supports
   "prompt_text_speaker5": "Reference text for speaker 5 voice cloning"
 }
 ```
+
+### Accelerate Inference with SGLang
+
+MOSS-TTSD v1.0 supports running the fused MOSS-TTSD and MOSS-Audio-Tokenizer model with the deeply extended [SGLang](https://github.com/OpenMOSS/sglang) from OpenMOSS, enabling efficient inference for audio generation.
+
+#### Environment Setup
+
+First, clone the SGLang branch compatible with MOSS-TTSD v1.0.
+
+```bash
+git clone https://github.com/OpenMOSS/sglang -b moss-ttsd-v1.0-with-cat
+```
+
+##### Using venv
+
+```bash
+python -m venv moss_ttsd_sglang
+source moss_ttsd_sglang/bin/activate
+pip install ./sglang/python[all]
+```
+
+##### Using conda
+
+```bash
+conda create -n moss_ttsd_sglang python=3.12
+conda activate moss_ttsd_sglang
+pip install ./sglang/python[all]
+```
+
+#### End-to-End Inference Service
+
+##### Start the inference server
+
+Before starting the service, first download [MOSS-TTSD-v1.0](https://huggingface.co/OpenMOSS-Team/MOSS-TTSD-v1.0) and [MOSS-Audio-Tokenizer](https://huggingface.co/OpenMOSS-Team/MOSS-Audio-Tokenizer).
+
+```bash
+git clone https://huggingface.co/OpenMOSS-Team/MOSS-TTSD-v1.0
+git clone https://huggingface.co/OpenMOSS-Team/MOSS-Audio-Tokenizer
+```
+
+Or:
+
+```bash
+hf download OpenMOSS-Team/MOSS-TTSD-v1.0 --local-dir ./MOSS-TTSD-v1.0
+hf download OpenMOSS-Team/MOSS-Audio-Tokenizer --local-dir ./MOSS-Audio-Tokenizer
+```
+
+After the download is complete, run the following command to fuse MOSS-TTSD v1.0 and MOSS-Audio-Tokenizer into a single-directory model that can be loaded by SGLang. After fusion, the model uses `voice_clone_and_continuation` inference mode by default:
+
+```bash
+python scripts/fuse_moss_tts_delay_with_codec.py \
+  --model-path <path-to-moss-ttsd-v1.0> \
+  --codec-model-path <path-to-moss-audio-tokenizer> \
+  --save-path <path-to-fused-model>
+```
+
+Then start the inference server with:
+
+```bash
+sglang serve \
+  --model-path <path-to-fused-model> \
+  --delay-pattern \
+  --trust-remote-code \
+  --port 30000 --host 0.0.0.0
+```
+
+> The first service startup may take longer due to compilation. Once you see `The server is fired up and ready to roll!`, the service is ready. The first request after startup may still trigger a lengthy compilation, which is expected behavior, so please be patient.
+
+> **Tip:** The end-to-end inference service may cause some VRAM fragmentation during runtime. If GPU memory is tight, we recommend using `--mem-fraction-static` when starting SGLang to reserve enough space for intermediate tensors.
+
+##### Send a generation request
+
+The service API is compatible with the standard multimodal text-generation interface. The `text` field in the returned JSON contains the base64-encoded WAV audio.
+
+The repository currently provides a minimal request example script:
+
+```bash
+python scripts/request_sglang_generation.py
+```
+
+This script will:
+
+- send requests to `http://localhost:30000/generate` by default
+- use `asset/reference_02_s1.wav` and `asset/reference_02_s2.wav` in the repository as reference audio
+- save the returned audio to `outputs/output.wav`
+
+If you need to change the reference audio, input text, sampling parameters, or server URL, you can directly edit the corresponding constants in `scripts/request_sglang_generation.py`.
+
 ## Evaluation
 ### Objective Evaluation(TTSD-eval)
 
