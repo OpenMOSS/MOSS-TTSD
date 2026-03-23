@@ -7,7 +7,7 @@
     <p>
     </p>
     <a href="https://mosi.cn/models/moss-ttsd"><img src="https://img.shields.io/badge/Blog-Read%20More-green" alt="blog"></a>
-    <a href="https://mosi.cn/models/moss-ttsd"><img src="https://img.shields.io/badge/Paper-Coming%20Soon-red" alt="paper"></a>
+    <a href="https://arxiv.org/abs/2603.19739"><img src="https://img.shields.io/badge/Paper-2603.19739%20-red" alt="paper"></a>
     <a href="https://huggingface.co/OpenMOSS-Team/MOSS-TTSD-v1.0"><img src="https://img.shields.io/badge/%F0%9F%A4%97%20MOSS%20TTSD%20-v1.0-yellow" alt="MOSS-TTSD-v1.0"></a>
      <a href="https://huggingface.co/spaces/OpenMOSS-Team/MOSS-TTSD"><img src="https://img.shields.io/badge/%F0%9F%A4%97%20Huggingface%20%20-space-orange" alt="MOSS-TTSD-space"></a>
     <a href=""><img src="https://img.shields.io/badge/AI Stuidio-Coming%20Soon-blue" alt="AI Studio"></a>
@@ -396,10 +396,14 @@ MOSS-TTSD 基于 Apache 2.0 协议开源。
 ## 引用
 
 ```
-@article{moss2025ttsd,
-  title={Text to Spoken Dialogue Generation},
-  author={OpenMOSS},
-  year={2025}
+@misc{zhang2026mossttsdtextspokendialogue,
+      title={MOSS-TTSD: Text to Spoken Dialogue Generation}, 
+      author={Yuqian Zhang and Donghua Yu and Zhengyuan Lin and Botian Jiang and Mingshu Chen and Yaozhou Jiang and Yiwei Zhao and Yiyang Zhang and Yucheng Yuan and Hanfu Chen and Kexin Huang and Jun Zhan and Cheng Chang and Zhaoye Fei and Shimin Li and Xiaogui Yang and Qinyuan Cheng and Xipeng Qiu},
+      year={2026},
+      eprint={2603.19739},
+      archivePrefix={arXiv},
+      primaryClass={cs.SD},
+      url={https://arxiv.org/abs/2603.19739}, 
 }
 ```
 
