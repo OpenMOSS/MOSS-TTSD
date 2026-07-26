@@ -3,7 +3,7 @@
     MOSS: Text to Spoken Dialogue Generation
     </h1>
     <p>
-    <img src="asset/OpenMOSS_logo.png" alt="OpenMOSS Logo" width="300">
+    <img src="asset/OpenMOSS_Logo.svg" alt="OpenMOSS Logo" width="300">
     <p>
     </p>
     <a href="https://www.open-moss.com/en/moss-ttsd/"><img src="https://img.shields.io/badge/Blog-Read%20More-green" alt="blog"></a>

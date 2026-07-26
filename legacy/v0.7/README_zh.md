@@ -3,7 +3,7 @@
     MOSS: 文本到口语对话生成
     </h1>
     <p>
-    <img src="asset/OpenMOSS_logo.png" alt="OpenMOSS Logo" width="300">
+    <img src="asset/OpenMOSS_Logo.svg" alt="OpenMOSS Logo" width="300">
     <p>
     </p>
     <a href="https://www.open-moss.com/cn/moss-ttsd/"><img src="https://img.shields.io/badge/博客-阅读更多-green" alt="blog"></a>
