@@ -10,10 +10,10 @@
     <a href="https://arxiv.org/abs/2603.19739"><img src="https://img.shields.io/badge/Paper-2603.19739%20-red" alt="paper"></a>
     <a href="https://huggingface.co/OpenMOSS-Team/MOSS-TTSD-v1.0"><img src="https://img.shields.io/badge/%F0%9F%A4%97%20MOSS%20TTSD%20-v1.0-yellow" alt="MOSS-TTSD-v1.0"></a>
      <a href="https://huggingface.co/spaces/OpenMOSS-Team/MOSS-TTSD"><img src="https://img.shields.io/badge/%F0%9F%A4%97%20Huggingface%20%20-space-orange" alt="MOSS-TTSD-space"></a>
-    <a href=""><img src="https://img.shields.io/badge/AI Stuidio-Coming%20Soon-blue" alt="AI Studio"></a>
+
     <a href="https://github.com/"><img src="https://img.shields.io/badge/Python-3.10+-orange" alt="version"></a>
     <a href="https://github.com/OpenMOSS/MOSS-TTSD"><img src="https://img.shields.io/badge/PyTorch-2.0+-brightgreen" alt="python"></a>
-    <a href="https://github.com/OpenMOSS/MOSS-TTSD"><img src="https://img.shields.io/badge/License-Apache%202.0-blue.svg" alt="mit"></a>
+    <a href="https://github.com/OpenMOSS/MOSS-TTSD"><img src="https://img.shields.io/badge/License-Apache%202.0-blue.svg" alt="Apache 2.0 license"></a>
     <br>
 
 </div>
@@ -25,6 +25,8 @@
 
 <!-- **MOSS-TTSD** is a long-form spoken dialogue generation model that enables highly expressive multi-party conversational speech synthesis across multiple languages. It supports continuous long-duration generation, flexible multi-speaker dialogue control, and state-of-the-art zero-shot voice cloning with only short reference audio. MOSS-TTSD is designed for real-world long-form content creation, including podcasts, audiobook, sports and esports commentary, dubbing, crosstalk, and entertainment scenarios. （about）-->
 
+
+**Start here:** [Installation](#installation) · [Quick start](#quick-start) · [Try the demo](https://huggingface.co/spaces/OpenMOSS-Team/MOSS-TTSD-v1.0) · [v1.0 model weights](https://huggingface.co/OpenMOSS-Team/MOSS-TTSD-v1.0) · [Evaluation](#evaluation)
 
 ## Overview
  <p align="center">
@@ -47,6 +49,10 @@ Whether it is capturing the spontaneous energy of a live talk show or the struct
 - **[2026-03-18]** We support efficient end-to-end SGLang inference for MOSS-TTSD v1.0.
 - **[2026-03-06]** We added end-to-end SGLang inference support for MOSS-TTSD v0.7. For detailed instructions, please see the [legacy v0.7 docs](./legacy/v0.7/README.md).
 - **[2026-02-10]** MOSS-TTSD v1.0 is released! MOSS-TTSD v1.0 is officially released! This milestone version redefines long-form synthesis with 60-minute single-session context and support for multi-party interactions. It significantly expands multilingual capabilities and diverse usage scenarios.
+
+<details>
+<summary>Earlier updates</summary>
+
 - **[2025-11-01]** MOSS-TTSD v0.7 is released! v0.7 significantly improves audio quality, voice cloning capability, and stability, adds support for 32 kHz high‑quality output, greatly extends single‑pass generation length (960s→1700s).
 - **[2025-09-09]** We supported SGLang inference engine to accelerate model inference by up to **16x**.
 - **[2025-08-25]** We released the 32khz version of XY-Tokenizer.
@@ -57,6 +63,8 @@ Whether it is capturing the spontaneous energy of a live talk show or the struct
 - **[2025-06-20]** MOSS-TTSD v0 is released! Moreover, we provide a podcast generation pipeline named Podever, which can automatically convert PDF, URL, or long text files into high-quality podcasts.
 
 **Note:** For MOSS-TTSD v0.7 (including end-to-end SGLang inference), please refer to the [legacy v0.7 docs](./legacy/v0.7/README.md) for detailed instructions.
+
+</details>
 
 ## Supported Languages
 

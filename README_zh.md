@@ -10,10 +10,10 @@
     <a href="https://arxiv.org/abs/2603.19739"><img src="https://img.shields.io/badge/Paper-2603.19739%20-red" alt="paper"></a>
     <a href="https://huggingface.co/OpenMOSS-Team/MOSS-TTSD-v1.0"><img src="https://img.shields.io/badge/%F0%9F%A4%97%20MOSS%20TTSD%20-v1.0-yellow" alt="MOSS-TTSD-v1.0"></a>
      <a href="https://huggingface.co/spaces/OpenMOSS-Team/MOSS-TTSD"><img src="https://img.shields.io/badge/%F0%9F%A4%97%20Huggingface%20%20-space-orange" alt="MOSS-TTSD-space"></a>
-    <a href=""><img src="https://img.shields.io/badge/AI Stuidio-Coming%20Soon-blue" alt="AI Studio"></a>
+
     <a href="https://github.com/"><img src="https://img.shields.io/badge/Python-3.10+-orange" alt="version"></a>
     <a href="https://github.com/OpenMOSS/MOSS-TTSD"><img src="https://img.shields.io/badge/PyTorch-2.0+-brightgreen" alt="python"></a>
-    <a href="https://github.com/OpenMOSS/MOSS-TTSD"><img src="https://img.shields.io/badge/License-Apache%202.0-blue.svg" alt="mit"></a>
+    <a href="https://github.com/OpenMOSS/MOSS-TTSD"><img src="https://img.shields.io/badge/License-Apache%202.0-blue.svg" alt="Apache 2.0 license"></a>
     <br>
 
 </div>
@@ -22,6 +22,8 @@
 # MOSS-TTSD🪐
 
 [English](README.md) | [简体中文](README_zh.md)
+
+**从这里开始：** [安装](#安装) · [快速开始](#快速开始) · [在线体验](https://huggingface.co/spaces/OpenMOSS-Team/MOSS-TTSD-v1.0) · [v1.0 模型下载](https://huggingface.co/OpenMOSS-Team/MOSS-TTSD-v1.0) · [评测](#评测)
 
 ## 概述
  <p align="center">
@@ -46,6 +48,10 @@ MOSS-TTSD 是开源 [MOSS‑TTS Family](https://github.com/OpenMOSS/MOSS-TTS) �
 - **[2026-03-18]** 我们支持了 MOSS-TTSD v1.0 的 SGLang 端到端高效推理。
 - **[2026-03-06]** 我们支持了 MOSS-TTSD v0.7 的 SGLang 端到端推理。具体使用说明请在 [legacy v0.7 文档](./legacy/v0.7/README_zh.md) 中查看。
 - **[2026-02-10]** 发布 MOSS-TTSD v1.0。该里程碑版本支持单次 60 分钟上下文与多人交互，大幅扩展了多语言能力和应用场景。
+
+<details>
+<summary>更早的更新</summary>
+
 - **[2025-11-01]** 发布 MOSS-TTSD v0.7。显著提升音质、音色克隆能力和稳定性，新增 32 kHz 高音质输出，并将单次生成长度从 960s 提升至 1700s。
 - **[2025-09-09]** 支持 SGLang 推理引擎，推理速度最高可提升至 **16x**。
 - **[2025-08-25]** 发布 XY-Tokenizer 的 32 kHz 版本。
@@ -57,6 +63,7 @@ MOSS-TTSD 是开源 [MOSS‑TTS Family](https://github.com/OpenMOSS/MOSS-TTS) �
 
 **说明：** 你仍可在 [legacy v0.7 文档](./legacy/v0.7/README_zh.md) 访问旧版 MOSS-TTSD v0.7 的完整使用说明与脚本。
 
+</details>
 
 ## 支持的语言
 
